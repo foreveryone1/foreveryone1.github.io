@@ -36,7 +36,7 @@ data_action = [
         bullets: [
             "You can use the <i>Attack</i> action to make a special melee attack, to climb onto a bigger creature. If you're able to make multiple attacks with the Attack action, this attack replaces one of them.",
             "Your target must be more than one size larger than you. An area of the creature capable of supporting you must be within your reach.",
-            "Using at least one free hand, you try to gain purchase one the target by making a Strength (Athletics) or Dexterity (Acrobatics) check contested by the target's Dexterity (Acrobatics) check.",
+            "Using at least one free hand, you try to gain purchase on the target by making a Strength (Athletics) or Dexterity (Acrobatics) check contested by the target's Dexterity (Acrobatics) check.",
             "If you succeed, you move into the target's space and cling to it's body. While in the target's space, you move with the target and have advantage on attack rolls against it.",
             "You can move around in the target's space, treating the space as difficult terrain.",
             "The target's ability to attack you at any location on its body is left to the DM's discretion."
