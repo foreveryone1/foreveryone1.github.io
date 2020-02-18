@@ -1,0 +1,1 @@
+"use strict";class PageFilterTables extends PageFilter{constructor(){super(),this._sourceFilter=SourceFilter.getInstance()}mutateForFilters(a){}addToFilters(a,b){b||this._sourceFilter.addItem(a.source)}async _pPopulateBoxOptions(a){a.filters=[this._sourceFilter]}toDisplay(a,b){return this._filterBox.toDisplay(a,b.source)}}

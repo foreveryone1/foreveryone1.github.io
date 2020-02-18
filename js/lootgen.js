@@ -1,302 +1,57 @@
-"use strict";
-const LOOT_JSON_URL = "data/loot.json";
-const MULT_SIGN = "×";
-const MAX_HIST = 9;
-const renderer = new EntryRenderer();
-let lootList;
-
-class LootGen {
-	constructor () {
-		this._spells = null;
-		this._loadingSpells = false;
-	}
-
-	loadLoot (lootData) {
-		lootList = lootData;
-		$("button#clear").click(() => $("#lootoutput").html(""));
-		$("button#genloot").click(lootGen.rollLoot);
-		const $selTables = $(`#table-sel`);
-		lootData.magicitems.forEach((t, i) => {
-			$selTables.append(`<option value="${i}">${t.name}</option>`);
-		});
-		$selTables.on("change", () => {
-			const v = $selTables.val();
-			if (v !== "") this.displayTable(v);
-		});
-	}
-
-	static getMaxRoll (table) {
-		const lastItem = table.last();
-		return lastItem.max != null ? lastItem.max : lastItem.min;
-	}
-
-	displayTable (arrayEntry) {
-		const itemsTable = lootList.magicitems[arrayEntry];
-		let htmlText = `
-		<table id="stats">
-			<caption>${itemsTable.name}</caption>
-			<thead>
+"use strict";const LOOT_JSON_URL="data/loot.json",MULT_SIGN="\xD7",MAX_HIST=9,renderer=new Renderer;let lootList;const views={},CHALLENGE_RATING_RANGE={0:"1\u20144",1:"1\u20144",5:"5\u201410",11:"11\u201416",17:"17\u201420"},STORAGE_BASIC_CR="lootgen-basic-cr",STORAGE_BASIC_HOARD="lootgen-basic-hoard",STORAGE_TABLE_SEL="lootgen-table-sel",STORAGE_PARTY_CUMULATIVE="lootgen-char-cumulative",STORAGE_PARTY_CLOSEST_TIER="lootgen-closest-tier";class LootGen{constructor(){this._spells=null,this._loadingSpells=!1}doPreLoadInit(){$("#rollAgaintTable").click(()=>{const a=$("#table-sel"),b=a.val();a.toggleClass("form-control--error",""===b);""===b||lootGen.pRollAgainstTable(b)});const a=$(`#cr`),b=SessionStorageUtil.get(STORAGE_BASIC_CR);null!=b&&a.val(b),a.change(()=>SessionStorageUtil.set(STORAGE_BASIC_CR,a.val()));const c=$(`#hoard`),d=SessionStorageUtil.get(STORAGE_BASIC_HOARD);null!=d&&c.prop("checked",d),c.change(()=>SessionStorageUtil.set(STORAGE_BASIC_HOARD,c.prop("checked")))}doPostLoadInit(){const a=$(`#table-sel`),b=SessionStorageUtil.get(STORAGE_TABLE_SEL);null!=b&&(a.val(b),a.change()),a.change(()=>SessionStorageUtil.set(STORAGE_TABLE_SEL,a.val()))}loadLoot(a){lootList=a,$("button.id-clear").click(()=>lootOutput.clear()),$("button#genloot").click(LootGen.pRollLoot);const b=$(`#table-sel`);a.magicitems.forEach((a,c)=>{b.append(`<option value="${c}">${a.name}</option>`)}),b.on("change",()=>{const a=b.val();a&&$("#table-sel").removeClass("form-control--error"),this.pDisplayTable(a,!$(`#container-loot-table`).hasClass("hidden")&&$(".id-showLootTable").prop("checked"))})}static getMaxRoll(a){const b=a.last();return null==b.max?b.min:b.max}async pDisplayTable(a,b=!1){const c=lootList.magicitems[a];if(""===a)$("div#classtable").hide();else{const d=$(`
+				<hr/>
+				<table id="stats">
+					<caption>${c.name}</caption>
+					<tbody>
+					<tr>
+						<th class="col-2 text-center"><span class="roller" onclick="lootGen.pRollAgainstTable(${a});">d100</span></th>
+						<th class="col-10">Magic Item</th>
+					</tr>
+					</tbody>
+				</table>
+				<small><strong>Source:</strong> <em>${Parser.sourceJsonToFull(c.source)}</em>, page ${c.page}</small>
+			`),e=d.find("tbody"),f=c.table.map(async b=>{const c=[],d=await LootGen.p$ParseLink(b),e=b.min===b.max?b.min:`${b.min}-${b.max}`,f=$$`<tr>
+					<td class="text-center">${e}</td>
+					<td>${d}${b.table?` (roll <span class="roller" onclick="lootGen.pRollAgainstTable(${a}, ${b.min})">d${LootGen.getMaxRoll(b.table)}</span>)`:""}</td>
+				</tr>`;if(c.push(f),b.table){const a=b.table.map(async a=>{const b=await LootGen.p$ParseLink(a);return $$`<tr>
+							<td/>
+							<td>
+								<span style="display: inline-block; min-width: 40px;">${a.min}${a.max?`\u2212${a.max}`:""}</span>
+								${b}
+							</td>
+						</tr>`}),d=await Promise.all(a);d.forEach(a=>c.push(a))}return c}),g=await Promise.all(f);g.forEach(a=>a.forEach(a=>a.appendTo(e))),$("div#classtable").empty().append(d).toggle(b)}}async p$GetRandomItemHtml(a,b){const c=lootList.magicitems[a],d=b||LootGen.randomNumber(1,100),e=GenUtil.getFromTable(c.table,d);return e.table?async function(){const b=LootGen.getMaxRoll(e.table),c=LootGen.randomNumber(1,b),d=GenUtil.getFromTable(e.table,c),f=await LootGen.p$ParseLink(d,{rollSpellScroll:!0,rollChoices:!0});return $$`<ul><li class="split">
+				<span>${f} (rolled ${c})</span>
+				<span class="roller" onclick="lootGen.pRerollItem(this, ${a})">[reroll]</span>
+			</li></ul>`}():async function(){const b=await LootGen.p$ParseLink(e,{rollSpellScroll:!0,rollChoices:!0});return $$`<ul><li class="split">
+				<span>${b} (rolled ${d})</span>
+				<span class="roller" onclick="lootGen.pRerollItem(this, ${a})">[reroll]</span>
+			</li></ul>`}()}static itemTitleHtml(a){return $(`<div class="id-top">Rolled against <strong>${a.name}</strong>:</div>`)}async pRollAgainstTable(a,b){const c=lootList.magicitems[a],d=b||LootGen.randomNumber(1,100),e=LootGen.itemTitleHtml(c);lootOutput.add((await this.p$GetRandomItemHtml(a,d)),e)}async pRerollItem(a,b){const c=$(a),d=LootGen.randomNumber(1,100),e=await this.p$GetRandomItemHtml(b,d);c.parents("ul").replaceWith(e)}static async pRollLoot(){const a=$("#cr").val(),b=$("#hoard").prop("checked"),c=$("<ul></ul>"),d=b?lootList.hoard:lootList.individual;let e=null;for(let b=0;b<d.length;b++)a>=d[b].mincr&&a<=d[b].maxcr&&(e=d[b]);if(!e)return;const f=LootGen.randomNumber(1,100),g=e.table;let h=null;for(let a=0;a<g.length;a++)f>=g[a].min&&f<=g[a].max&&(h=g[a]);if(h){if(b){const a=[lootGen.getFormattedCoinsForDisplay(e.coins)],b=h.gems?h.gems:h.artobjects?h.artobjects:null;if(b){let a=h.artobjects?lootList.artobjects:lootList.gemstones;for(let c=0;c<a.length;c++)a[c].type===b.type&&(a=a[c]);const d=Renderer.dice.parseRandomise2(b.amount),e=[];for(let b=0;b<d;b++)e.push(a.table[LootGen.randomNumber(0,a.table.length-1)]);$$`
+					<li>${Parser._addCommas(b.type)} gp ${h.artobjects?"art object":"gemstone"}${1<d?"s":""}${1<d?` (${MULT_SIGN}${d})`:""}:
+					${lootGen.$getSortedDeduplicatedList(e)}
+					</li>
+				`.appendTo(c)}if(h.magicitems){const a=[],b=[];a.push(h.magicitems.type.split(",")[0]),b.push(h.magicitems.amount.split(",")[0]),-1!==h.magicitems.type.indexOf(",")&&(a.push(h.magicitems.type.split(",")[1]),b.push(h.magicitems.amount.split(",")[1]));for(let d=0;d<a.length;d++){const e=a[d],f=b[d];let g=lootList.magicitems,h=0;for(let a=0;a<g.length;a++)g[a].type===e&&(h=a,g=g[h]);const j=Renderer.dice.parseRandomise2(f),k=[];for(let a=0;a<j;a++){const{itemRoll:a,rolled:b}=LootGen.__getRolledItemFromTable(g);k.push({rolled:b,$render:LootGen.p$ParseLink(b,{rollSpellScroll:!0,rollChoices:!0}),roll:a,table:g})}const l=await Promise.all(k.map(a=>a.$render));k.forEach((a,b)=>a.$render=l[b]),$$`
+						<li>
+							Magic Item${1<j?"s":""}
+							(<span class="roller" onclick="MiscUtil.scrollPageTop() || lootGen.pDisplayTable(${h}, true);">Table ${e}</span>)
+							${1<k.length?` (${MULT_SIGN}${k.length})`:""}:
+							${lootGen.$getSortedItemList(k)}
+						</li>
+					`.appendTo(c)}}for(let b=0;b<a.length;b++)c.prepend(`<li>${a[b]}</li>`)}else c.prepend(`<li>${lootGen.getFormattedCoinsForDisplay(h.coins)}</li>`);let d=b?`<strong>Hoard</strong> for challenge rating: <strong>${CHALLENGE_RATING_RANGE[a]}</strong>`:`<strong>Individual Treasure</strong> for challenge rating: <strong>${CHALLENGE_RATING_RANGE[a]}</strong>`;lootOutput.add(c,d)}}$getSortedDeduplicatedList(a){const b=a.sort(SortUtil.ascSort),c=$(`<ul/>`);let d=null,e=0;const f=()=>$(`<li><span>${d}${1<e?`, ${MULT_SIGN}${e} `:""}</span></li>`).appendTo(c);return b.forEach(a=>{null==d||a!==d?(0<e&&f(),d=a,e=1):e++}),0<e&&f(),c}$getSortedItemList(a){const b=a.sort((c,a)=>SortUtil.ascSort(c.rolled,a.rolled)),c=$(`<ul/>`);return b.forEach(a=>{const b=$(`<span class="text-muted">(Rolled ${a.roll})</span>`),d=$(`<span class="roller">[reroll]</span>`).click(async()=>{const{itemRoll:c,rolled:d}=LootGen.__getRolledItemFromTable(a.table);b.text(`(Rolled ${c})`);const e=await LootGen.p$ParseLink(d,{rollSpellScroll:!0,rollChoices:!0});a.$render.replaceWith(e),a.$render=e});$$`<li class="split">
+					<span>${a.$render} ${b}</span>
+					${d}
+			</li>`.appendTo(c)}),c}static __getRolledItemFromTable(a){const b=LootGen.randomNumber(1,100),c=GenUtil.getFromTable(a.table,b),d=c.table?c.table[LootGen.randomNumber(0,c.table.length-1)]:c;return{itemRoll:b,rolled:d}}getFormattedCoinsForDisplay(a){const b=LootGen.generateCoinsFromLoot(a),c=[];b.forEach(a=>{c.unshift(`<li>${Parser._addCommas(a.value)} ${a.denomination}</li>`)});const d=Parser._addCommas(LootGen.getGPValueFromCoins(b)),e=c.reduce((a,b)=>a+b,"");return`${d} gp total:<ul> ${e}</ul>`}static generateCoinsFromLoot(a){const b=[],c=Parser.COIN_ABVS.map(b=>a[b]);for(let d=c.length-1;0<=d;d--){if(!c[d])continue;const a=c[d].split("*")[1];let e=Renderer.dice.parseRandomise2(c[d].split("*")[0]);a&&(e*=parseInt(a));const f={denomination:Parser.COIN_ABVS[d],value:e};b.push(f)}return b}static getGPValueFromCoins(a){const b=a.reduce((a,b)=>{switch(b.denomination){case"cp":return a+=.01*b.value;case"sp":return a+=.1*b.value;case"ep":return a+=.5*b.value;case"gp":return a+=b.value;case"pp":return a+=10*b.value;default:return a;}},0);return parseFloat(b.toFixed(2))}static randomNumber(a,b){return RollerUtil.randomise(b,a)}static _getOrViewSpellsPart(a){return renderer.render(`{@filter see all ${Parser.spLevelToFullLevelText(a,!0)} spells|spells|level=${a}}`)}static async p$ParseLink(a,b={}){function c(a){return"string"==typeof a?{name:a,source:SRC_DMG}:a}const d=$(`<span/>`),e=a.item||(()=>{const b=Object.values(Object.values(a.choose)[0])[0];return"string"==typeof b?`{@item ${b}}`:`{@item ${b.name}|${b.source}}`})();if(-1!==e.indexOf("{@item ")){const a=renderer.render(e);d.append(a)}else d.append(e);if(b.rollSpellScroll&&null!=a.spellLevel&&d.append(" ").append(lootGen.getSpell$ele(a.spellLevel)),b.rollChoices&&a.choose){const b=[];a.choose.fromGeneric&&b.push(...(await Promise.all(a.choose.fromGeneric.map(c).map(a=>Renderer.hover.pCacheAndGet(UrlUtil.PG_ITEMS,a.source,UrlUtil.URL_TO_HASH_BUILDER[UrlUtil.PG_ITEMS](a))))).map(a=>a.variants).flat()),a.choose.fromGroup&&b.push(...(await Promise.all(a.choose.fromGroup.map(c).map(a=>Renderer.hover.pCacheAndGet(UrlUtil.PG_ITEMS,a.source,UrlUtil.URL_TO_HASH_BUILDER[UrlUtil.PG_ITEMS](a))))).flat().map(a=>a.items.map(a=>{const[b,c]=[...a.split("|")];return Renderer.hover._getFromCache(UrlUtil.PG_ITEMS,c||SRC_DMG,UrlUtil.URL_TO_HASH_BUILDER[UrlUtil.PG_ITEMS]({name:b,source:c||SRC_DMG}))})).flat()),a.choose.fromItems&&b.push(...(await Promise.all(a.choose.fromItems.map(c).map(a=>Renderer.hover.pCacheAndGet(UrlUtil.PG_ITEMS,a.source,UrlUtil.URL_TO_HASH_BUILDER[UrlUtil.PG_ITEMS](a)))))),a.choose.fromLoaded&&b.push(...a.choose.fromLoaded),d.append(" ").append(lootGen.getGenericVariant$ele(b))}return d}hasLoadedSpells(){return!!this._spells&&!this._loadingSpells}loadSpells(a){this._loadingSpells||(this._loadingSpells=!0,DataUtil.spell.pLoadAll().then(b=>{this._spells={};const c=a=>{this._spells[a.level]=this._spells[a.level]||[],this._spells[a.level].push(`{@spell ${a.name}|${a.source}}`)};b.filter(a=>!SourceUtil.isNonstandardSource(a.source)).forEach(a=>c(a)),BrewUtil.pAddBrewData().then(b=>{b&&b.spell&&b.spell.forEach(a=>c(a)),this._loadingSpells=!1,a()})}))}getGenericVariant$ele(a){const b=()=>{const b=RollerUtil.rollOnArray(a),c=b.specificVariant||b;return`{@item ${c.name}|${c.source}}`},c=()=>e.empty().append(renderer.render(b())),d=$(`<span class="roller" onmousedown="event.preventDefault()">[reroll]</span>`).click(()=>c()),e=$(`<span/>`).append(renderer.render(b()));return $$`<em>(<span>${e} ${d}</span>)</em>`}getSpell$ele(a){if(this.hasLoadedSpells()){const b=$(`<span class="roller" onmousedown="event.preventDefault()">[reroll]</span>`).click(()=>this.loadRollSpell(b.parent(),a));return $$`<em>(<span>${renderer.render(this.getRandomSpell(a))} ${b}</span> or ${LootGen._getOrViewSpellsPart(a)})</em>`}const b=$(`<span class="roller">roll</span>`).click(()=>this.loadRollSpell(b.parent(),a));return $$`<em>(${b} or ${LootGen._getOrViewSpellsPart(a)})</em>`}loadRollSpell(a,b){const c=()=>{const c=$(`<span class="roller" onmousedown="event.preventDefault()">[reroll]</span>`).click(()=>this.loadRollSpell(c.parent(),b));a.removeClass("roller").attr("onclick","").html(`${renderer.render(this.getRandomSpell(b))} `).append(c)};this.hasLoadedSpells()?c():(a.html(`[loading...]`),this.loadSpells(()=>c()))}getRandomSpell(a){const b=this._spells[a];return b[LootGen.randomNumber(0,b.length-1)]}}const randomLootTables={_selectorTarget:"#random-from-loot-table",_items:{Major:{},Minor:{},Other:{}},_rarityOrder:["Common","Uncommon","Rare","Very Rare","Legendary"],_tableItemCountPerLevelTier:{1:{Major:{Uncommon:0,Rare:0,"Very Rare":0,Legendary:0},Minor:{Common:0,Uncommon:0,Rare:0,"Very Rare":0,Legendary:0}},4:{Major:{Uncommon:2,Rare:0,"Very Rare":0,Legendary:0},Minor:{Common:6,Uncommon:2,Rare:1,"Very Rare":0,Legendary:0}},10:{Major:{Uncommon:5,Rare:1,"Very Rare":0,Legendary:0},Minor:{Common:10,Uncommon:12,Rare:5,"Very Rare":1,Legendary:0}},16:{Major:{Uncommon:1,Rare:2,"Very Rare":2,Legendary:1},Minor:{Common:3,Uncommon:6,Rare:9,"Very Rare":5,Legendary:1}},20:{Major:{Uncommon:0,Rare:1,"Very Rare":2,Legendary:3},Minor:{Common:0,Uncommon:0,Rare:4,"Very Rare":9,Legendary:6}}},async init(){const a=await Renderer.item.pBuildList({isBlacklistVariants:!0}),b=await BrewUtil.pAddBrewData(),c=await Renderer.item.getItemsFromHomebrew(b),d=a.concat(c);for(const a of d){if("Specific Variant"===a.category)continue;if(a.noDisplay)continue;let b=a.rarity,c=a.tier||"Other";randomLootTables._items[c]||(randomLootTables._items[c]={});let d=randomLootTables._items[c];d[b]||(d[b]=[]),d[b].push(a)}const e=randomLootTables._items,f=$(randomLootTables._selectorTarget);for(let a of Object.keys(e)){let b=Object.keys(e[a]).sort((c,a)=>randomLootTables._rarityOrder.findIndex(a=>a===c)-randomLootTables._rarityOrder.findIndex(b=>b===a));for(let c of b)void 0!==c&&"None"!==c&&a&&"undefined"!==a&&f.append(`<option value="${a}-${c}">${a} ${c}</option>`)}!1===SessionStorageUtil.get(STORAGE_PARTY_CUMULATIVE)&&$("#char-cumulative").prop("checked",!1),$("#closest-tier").prop("checked",SessionStorageUtil.get(STORAGE_PARTY_CLOSEST_TIER)),$("#random-magic-item-select-tier").toggle(!SessionStorageUtil.get(STORAGE_PARTY_CLOSEST_TIER)),randomLootTables.setEvents()},setEvents(){const a=$("#char-cumulative"),b=$("#closest-tier"),c=$("#classtable"),d=$(`#charLevel`),e=$("#random-from-loot-table");$(".slider").toggle(b.prop("checked")).slider({min:1,max:20}).slider("pips",{rest:"label"}).slider("float"),a.change(a=>{const b=a.currentTarget.checked;SessionStorageUtil.set(STORAGE_PARTY_CUMULATIVE,b)}),b.change(a=>{const b=a.currentTarget.checked;$(".slider").toggle(b),$("#random-magic-item-select-tier").toggle(!b),SessionStorageUtil.set(STORAGE_PARTY_CLOSEST_TIER,b)}),d.change(a=>{const b="1"===a.currentTarget.value;$(`#wrp-char-cumulative`).toggle(!b),b?d.css({borderTopRightRadius:3,borderBottomRightRadius:3}):d.css({borderTopRightRadius:"",borderBottomRightRadius:""})}),$(".id-showLootTable").click(function(a){const b=a.currentTarget.checked;$(".id-showLootTable").prop("checked",b),$("#classtable").toggle(b)}),e.change(function(a){const b=a.currentTarget.value;if(""!==b){const[a,c]=b.split("-");randomLootTables.displayTable(randomLootTables._items[a][c],a,c),$("#random-from-loot-table").removeClass("form-control--error")}else randomLootTables.displayTable("");$(".id-showLootTable").prop("checked")?c.show():c.hide()}),$("#get-random-item-from-table").click(async()=>{let[a,b]=e.val().split("-");if($("#random-from-loot-table").toggleClass("form-control--error",!a&&!b),a&&b){const c=$(`<ul data-rarity="${b}" data-tier="${a}"></ul>`).append((await randomLootTables.p$GetRandomItemHtml(a,b)));lootOutput.add(c,`Rolled on the table for <strong>${a} ${b}</strong> items`)}}),$("#get-group-of-items-for-character").click(async()=>{let a;const b=$("#closest-tier").prop("checked"),c=$("#char-cumulative").prop("checked")&&!b;a=b?$(".slider").slider("value"):$("#charLevel").val();const d=b?`level ${a}`:`level ${$(`#charLevel option[value=${a}]`).text()}`,e=randomLootTables.getNumberOfItemsNeeded(+a,b,c),f=$(`<div/>`),g={};await ObjUtil.pForEachDeep(e,async function(a,b){let c=b[0],d=$(`<ul data-tier="${c}"><li>${c} items</li></ul>`);await Promise.all(Object.keys(a).map(async b=>{let e=a[b],f=$(`<ul data-rarity="${b}"><li>${b} items(${e})</li></ul>`),h=$(`<ul data-tier="${c}"></ul>`);g[c]=(g[c]||0)+e;const i=await Promise.all([...Array(e)].map(async()=>randomLootTables.p$GetRandomItemHtml(c,b)));i.forEach(a=>h.append(a)),0<h.find("li").length&&(f.append(h),d.append(f))})),g[c]&&f.append(d)},{depth:1}),Object.values(g).reduce((c,a)=>c+a,0)||f.append(`<i>No items.</i>`),lootOutput.add(f,`Magical Items for a <strong>${d}</strong> Party:`)})},getNumberOfItemsNeeded(a,b=!1,c=!0){const d={Major:{Uncommon:0,Rare:0,"Very Rare":0,Legendary:0},Minor:{Common:0,Uncommon:0,Rare:0,"Very Rare":0,Legendary:0}};if(!b&&!c){const b=randomLootTables._tableItemCountPerLevelTier[a];ObjUtil.mergeWith(b,d,(a,b)=>"number"==typeof a?a+b:b,{depth:2})}else{let c=1;const e=Object.keys(randomLootTables._tableItemCountPerLevelTier).sort((c,a)=>c-a);for(let f=0;f<=e.length;f++){let g=+e[f],h=randomLootTables._tableItemCountPerLevelTier[g];if(g<=a)ObjUtil.mergeWith(h,d,(a,b)=>"number"==typeof a?a+b:b,{depth:2});else if(g>a&&b){let b=g-c;ObjUtil.mergeWith(h,d,(c,d)=>"number"==typeof c?d+Math.floor((b-(g-a))/b*c):d,{depth:2});break}else break;c=g}}return d},async p$CreateLink(a){const b=(()=>"Generic Variant"===a.category&&a.variants&&a.variants.length?{item:`{@item ${a.name}|${a.source}}`,choose:{fromLoaded:a.variants}}:{item:`{@item ${a.name}|${a.source}}`})();return LootGen.p$ParseLink(b,{rollSpellScroll:!0,rollChoices:!0})},getRandomItem(a,b){const c=RollerUtil.randomise(randomLootTables._items[a][b].length-1,0);return{roll:c,item:randomLootTables._items[a][b][c]}},async p$GetRandomItemHtml(a,b){const{roll:c,item:d}=randomLootTables.getRandomItem(a,b),e=await randomLootTables.p$CreateLink(d);return $$`
+			<li class="split">
+				<span>${e} <span class="text-muted">(Rolled ${c+1})</span></span>
+				<span class="roller" onclick="randomLootTables.pRerollItem(this)">[reroll]</span>
+			</li>
+		`},async pRerollItem(a){const b=$(a),c=b.closest("[data-rarity]").attr("data-rarity"),d=b.closest("[data-tier]").attr("data-tier");b.parent("li").replaceWith((await randomLootTables.p$GetRandomItemHtml(d,c)))},displayTable(a,b,c){if(""===a)$("div#classtable").hide();else{let d=$(`
+			<hr/>
+			<table id="stats">
+				<caption>Table for ${b} Magic items that are ${c}</caption>
+				<tbody>
 				<tr>
-					<th class="col-xs-2 text-align-center"><span class="roller" onclick="lootGen.rollAgainstTable(${arrayEntry});">d100</span></th>
-					<th class="col-xs-10">Magic Item</th>
+					<th class="col-2 text-center"><span class="roller" onclick="randomLootTables.getRandomItem('${b}', '${c}');">d${a.length}</span></th>
+					<th class="col-10">${b} ${c} Magic Items</th>
 				</tr>
-			</thead>`;
-		itemsTable.table.forEach(it => {
-			const range = it.min === it.max ? it.min : `${it.min}-${it.max}`;
-			htmlText += `<tr><td class="text-align-center">${range}</td><td>${lootGen.parseLink(it.item)}${it.table ? ` (roll <span class="roller" onclick="lootGen.rollAgainstTable(${arrayEntry}, ${it.min})">d${LootGen.getMaxRoll(it.table)}</span>)` : ""}</td></tr>`;
-			if (it.table) {
-				it.table.forEach(r => {
-					htmlText += `<tr><td></td><td><span style="display: inline-block; min-width: 40px;">${r.min}${r.max ? `\u2212${r.max}` : ""}</span> ${lootGen.parseLink(r.item)}</td></tr>`;
-				})
-			}
-		});
-		htmlText += `
-		</table>
-		<small><b>Source:</b> <i>${Parser.sourceJsonToFull(itemsTable.source)}</i>, page ${itemsTable.page}</small>`;
-		$("div#classtable").html(htmlText).show();
-	}
-
-	rollAgainstTable (ixTable, parentRoll) {
-		const table = lootList.magicitems[ixTable];
-
-		const rowRoll = parentRoll || lootGen.randomNumber(1, 100);
-		const row = GenUtil.getFromTable(table.table, rowRoll);
-
-		function getMessage () {
-			const item = lootGen.parseLink(row.item, {rollSpellScroll: true});
-
-			return `Rolled a ${rowRoll} against ${table.name}:<ul><li>${item}</li></ul>`;
-		}
-
-		function getMessageSub () {
-			const subTableMax = LootGen.getMaxRoll(row.table);
-			const roll = lootGen.randomNumber(1, subTableMax);
-			const rolled = GenUtil.getFromTable(row.table, roll);
-			const item = lootGen.parseLink(rolled.item, {rollSpellScroll: true});
-
-			return `Rolled a ${rowRoll} (${roll + 1}) against ${table.name}:<ul><li>${item}</li></ul>`;
-		}
-
-		const message = row.table ? getMessageSub() : getMessage();
-
-		$(`#lootoutput > ul:eq(${MAX_HIST}), #lootoutput > hr:eq(${MAX_HIST})`).remove();
-		$("#lootoutput").prepend(`<ul><li>${message}</li></ul><hr>`);
-	}
-
-	rollLoot () {
-		const cr = $("#cr").val();
-		const hoard = $("#hoard").prop("checked");
-		$(`#lootoutput > ul:eq(${MAX_HIST}), #lootoutput > hr:eq(${MAX_HIST})`).remove();
-		$("#lootoutput").prepend("<ul></ul><hr>");
-		const tableset = hoard ? lootList.hoard : lootList.individual;
-		let curtable = null;
-		for (let i = 0; i < tableset.length; i++) if (cr >= tableset[i].mincr && cr <= tableset[i].maxcr) curtable = tableset[i];
-		if (!curtable) return;
-		const lootroll = lootGen.randomNumber(1, 100);
-		const loottable = curtable.table;
-		let loot = null;
-		for (let i = 0; i < loottable.length; i++) if (lootroll >= loottable[i].min && lootroll <= loottable[i].max) loot = loottable[i];
-		if (!loot) return;
-		if (hoard) {
-			const treasure = [];
-			treasure.push(lootGen.getFormattedCoinsForDisplay(curtable.coins));
-			const artgems = loot.gems ? loot.gems : (loot.artobjects ? loot.artobjects : null);
-			if (artgems) {
-				let artgemstable = loot.artobjects ? lootList.artobjects : lootList.gemstones;
-				for (let i = 0; i < artgemstable.length; i++) if (artgemstable[i].type === artgems.type) artgemstable = artgemstable[i];
-				const roll = EntryRenderer.dice.parseRandomise2(artgems.amount);
-				const gems = [];
-				for (let i = 0; i < roll; i++) gems.push(artgemstable.table[lootGen.randomNumber(0, artgemstable.table.length - 1)]);
-				$("#lootoutput ul:eq(0)").append(`<li>${Parser._addCommas(artgems.type)} gp ${loot.artobjects ? "art object" : "gemstone"}${roll > 1 ? "s" : ""}${roll > 1 ? ` (${MULT_SIGN}${roll})` : ""}:<ul>${lootGen.sortArrayAndCountDupes(gems)}</ul></li>`);
-			}
-			if (loot.magicitems) {
-				const magicitemtabletype = [];
-				const magicitemtableamounts = [];
-				magicitemtabletype.push(loot.magicitems.type.split(",")[0]);
-				magicitemtableamounts.push(loot.magicitems.amount.split(",")[0]);
-				if (loot.magicitems.type.indexOf(",") !== -1) {
-					magicitemtabletype.push(loot.magicitems.type.split(",")[1]);
-					magicitemtableamounts.push(loot.magicitems.amount.split(",")[1])
-				}
-				for (let v = 0; v < magicitemtabletype.length; v++) {
-					const curtype = magicitemtabletype[v];
-					const curamount = magicitemtableamounts[v];
-					let magicitemstable = lootList.magicitems;
-					let tablearrayentry = 0;
-					for (let i = 0; i < magicitemstable.length; i++) {
-						if (magicitemstable[i].type === curtype) {
-							tablearrayentry = i;
-							magicitemstable = magicitemstable[tablearrayentry];
-						}
-					}
-					const roll = EntryRenderer.dice.parseRandomise2(curamount);
-					const magicitems = [];
-					for (let i = 0; i < roll; i++) {
-						const itemRoll = lootGen.randomNumber(1, 100);
-						const curmagicitem = GenUtil.getFromTable(magicitemstable.table, itemRoll);
-
-						const nestedRoll = curmagicitem.table ? lootGen.randomNumber(0, curmagicitem.table.length - 1) : null;
-						const rolled = curmagicitem.table ? curmagicitem.table[nestedRoll] : curmagicitem.item;
-						magicitems.push({
-							result: lootGen.parseLink(rolled, {rollSpellScroll: true}),
-							roll: itemRoll
-						});
-					}
-					$("#lootoutput ul:eq(0)").append(`<li>Magic Item${roll > 1 ? "s" : ""} (<span class="roller" onclick="lootGen.displayTable(${tablearrayentry});">Table ${curtype}</span>)${magicitems.length > 1 ? ` (${MULT_SIGN}${magicitems.length})` : ""}:<ul>${lootGen.sortArrayAndCountDupes(magicitems)}</ul></li>`);
-				}
-			}
-			for (let i = 0; i < treasure.length; i++) $("#lootoutput ul:eq(0)").prepend(`<li>${treasure[i]}</li>`);
-		} else {
-			$("#lootoutput ul:eq(0)").prepend(`<li>${lootGen.getFormattedCoinsForDisplay(loot.coins)}</li>`);
-		}
-	}
-
-	sortArrayAndCountDupes (arr) {
-		let rolls = [];
-		function getRollPart () {
-			return rolls.length ? ` <span class="text-muted">(Rolled ${rolls.join(", ")})</span>` : "";
-		}
-
-		arr.sort();
-		let current = null;
-		let cnt = 0;
-		let result = "";
-		arr.forEach(r => {
-			if ((r.result || r) !== current) {
-				if (cnt > 0) result += `<li>${current}${getRollPart()}${cnt > 1 ? `, ${MULT_SIGN}${cnt} ` : ""}</li>`;
-				current = (r.result || r);
-				cnt = 1;
-				rolls = r.roll != null ? [r.roll] : [];
-			} else cnt++;
-		});
-		if (cnt > 0) result += `<li>${current}${getRollPart()}${cnt > 1 ? `, ${MULT_SIGN}${cnt} ` : ""}</li>`;
-		return result;
-	}
-
-	getFormattedCoinsForDisplay (loot) {
-		const generatedCoins = lootGen.generateCoinsFromLoot(loot);
-		const individuallyFormattedCoins = [];
-		generatedCoins.forEach((coin) => {
-			individuallyFormattedCoins.unshift(`<li>${Parser._addCommas(coin.value)} ${coin.denomination}</li>`);
-		});
-		const totalValueGP = Parser._addCommas(lootGen.getGPValueFromCoins(generatedCoins));
-		const combinedFormattedCoins = individuallyFormattedCoins.reduce((total, formattedCoin) => {
-			return total += formattedCoin;
-		}, "");
-		return `${totalValueGP} gp total:<ul> ${combinedFormattedCoins}</ul>`;
-	}
-
-	generateCoinsFromLoot (loot) {
-		const retVal = [];
-		const coins = [loot.cp, loot.sp, loot.ep, loot.gp, loot.pp];
-		const coinnames = ["cp", "sp", "ep", "gp", "pp"];
-		for (let i = coins.length - 1; i >= 0; i--) {
-			if (!coins[i]) continue;
-			const multiplier = coins[i].split("*")[1];
-			let rolledValue = EntryRenderer.dice.parseRandomise2(coins[i].split("*")[0]);
-			if (multiplier) rolledValue *= parseInt(multiplier);
-			const coin = {"denomination": coinnames[i], "value": rolledValue};
-			retVal.push(coin);
-		}
-		return retVal;
-	}
-
-	getGPValueFromCoins (coins) {
-		const initialValue = 0;
-		const retVal = coins.reduce((total, coin) => {
-			switch (coin.denomination) {
-				case "cp":
-					return total += coin.value * 0.01;
-				case "sp":
-					return total += coin.value * 0.1;
-				case "ep":
-					return total += coin.value * 0.5;
-				case "gp":
-					return total += coin.value;
-				case "pp":
-					return total += coin.value * 10;
-				default:
-					return total;
-			}
-		}, initialValue);
-		return parseFloat(retVal.toFixed(2));
-	}
-
-	randomNumber (min, max) {
-		return RollerUtil.randomise(max, min);
-	}
-
-	_getOrViewSpellsPart (level) {
-		return renderer.renderEntry(`{@filter see all ${Parser.spLevelToFullLevelText(level, true)} spells|spells|level=${level}}`);
-	}
-
-	parseLink (rawText, options = {}) {
-		if (rawText.indexOf("{@item ") !== -1) {
-			const stack = [];
-			renderer.recursiveEntryRender(rawText, stack);
-			if (options.rollSpellScroll && rawText.toLowerCase().startsWith("{@item spell scroll")) {
-				const m = /spell scroll \((.*?)\)/.exec(rawText.toLowerCase());
-				const level = m[1] === "cantrip" ? 0 : Number(m[1][0]); // 1st letter is the spell level
-				if (this.hasLoadedSpells()) {
-					stack.push(` <i>(<span>${renderer.renderEntry(this.getRandomSpell(level))}</span> or ${this._getOrViewSpellsPart(level)})</i>`);
-				} else {
-					stack.push(` <i>(<span class="roller" onclick="lootGen.loadRollSpell.bind(lootGen)(this, ${level})">roll</span> or ${this._getOrViewSpellsPart(level)})</i>`);
-				}
-			}
-			return stack.join("");
-		} else return rawText;
-	}
-
-	hasLoadedSpells () {
-		return !!this._spells && !this._loadingSpells;
-	}
-
-	loadSpells (then) {
-		if (!this._loadingSpells) {
-			this._loadingSpells = true;
-			DataUtil.loadJSON(`data/spells/index.json`)
-				.then(index => Promise.all(Object.values(index).map(f => DataUtil.loadJSON(`data/spells/${f}`))))
-				.then(spellData => {
-					this._spells = {};
-					const addSpell = (sp) => {
-						this._spells[sp.level] = this._spells[sp.level] || [];
-						this._spells[sp.level].push(`{@spell ${sp.name}|${sp.source}}`);
-					};
-					spellData.forEach(d => {
-						d.spell.filter(it => !SourceUtil.isNonstandardSource(it.source)).forEach(sp => addSpell(sp));
-					});
-					BrewUtil.pAddBrewData()
-						.then((brew) => {
-							if (brew && brew.spell) brew.spell.forEach(sp => addSpell(sp));
-							this._loadingSpells = false;
-							then();
-						})
-						.catch(BrewUtil.purgeBrew);
-				});
-		}
-	}
-
-	loadRollSpell (ele, level) {
-		const output = () => {
-			$(ele).removeClass("roller").attr("onclick", "").html(`${renderer.renderEntry(this.getRandomSpell(level))}`)
-		};
-
-		if (!this.hasLoadedSpells()) {
-			$(ele).html(`[loading...]`);
-			this.loadSpells(() => output());
-		} else {
-			output();
-		}
-	}
-
-	getRandomSpell (level) {
-		const rollAgainst = this._spells[level];
-		return rollAgainst[this.randomNumber(0, rollAgainst.length - 1)];
-	}
-}
-
-const lootGen = new LootGen();
-window.onload = function load () {
-	DataUtil.loadJSON(LOOT_JSON_URL).then(lootGen.loadLoot.bind(lootGen));
-	$(`body`).on("mousedown", ".roller", (e) => e.preventDefault());
-};
+				</tbody>
+			</table>`);a.forEach((a,b)=>{d.find("tbody").append(`<tr><td class="text-center">${b+1}</td><td>${Renderer.get().render(`{@item ${a.name}|${a.source}}`)}`)}),$("div#classtable").html(d)}}},lootOutput=function(){const a=()=>$("#lootoutput"),b=function(){$(`#lootoutput > div:eq(${MAX_HIST}), #lootoutput > hr:eq(${MAX_HIST})`).remove()},c=function(b){a().prepend(b)};return{add:function(a,d){if(b(),d=$("<h4 class='wrp-sect-head'></h4>").append(d),"string"==typeof a)c(a);else if(a.jquery){let b=$("<div/>").append(d);b.append(a).append("<hr/>"),c(b)}const e=$(`#lootoutput > div`).last().find(`*`).last();e.is("hr")&&e.remove()},clear:function(){a().html("")}}}(),ViewManipulation=class a{constructor(b,c){this.name=b,this.events={},this._views=c,this._containers=function(b){const c={};return b.forEach(b=>{let d=a.getContainerName(b);c[b]=$(`#${d}`)}),c}(c),this._buttons=function(b){const c={};return b.forEach(b=>{let d=a.getButtonName(b);c[b]=$(`#${d}`)}),c}(c),this.initClickHandlers(),this.switchView(SessionStorageUtil.get(this.getStorageName())||c[0])}getStorageName(){return`lootgen-view-${this.name}`}static getName(a){return a.split("-").slice(1).join("-")}static getContainerName(a){return`container-${a}`}static getButtonName(a){return`btn-${a}`}each(a,b){for(let c of Object.keys(a))b.call(this,a[c],c)}initClickHandlers(){this.each(this._buttons,b=>{b.click(b=>{const c=a.getName(b.currentTarget.id);this.switchView(c)})})}switchView(a){this._views.forEach(b=>{const c=this._buttons[b],d=this._containers[b];c.toggleClass("active",a===b),d.toggleClass("hidden",a!==b),this.emit("change",a)}),SessionStorageUtil.set(this.getStorageName(),a)}on(a,b){this.events[a]||(this.events[a]=[]),this.events[a].push(b)}emit(a,...b){const c=this.events[a];c&&c.forEach(a=>{a.apply(this,b)})}},lootGen=new LootGen;window.addEventListener("load",function(){lootGen.doPreLoadInit(),ExcludeUtil.pInitialise(),DataUtil.loadJSON(LOOT_JSON_URL).then(a=>{lootGen.loadLoot(a),lootGen.doPostLoadInit()}),$(`body`).on("mousedown",".roller",a=>a.preventDefault()),views.mainView=new ViewManipulation("lootgen-tables",["lootgen","loot-table","random-magic-item"]),views.mainView.on("change",()=>$("#classtable").hide()),views.lootTables=new ViewManipulation("lootTables",["dmg-loot-table","xge-loot-table"]),views.lootTables.on("change",()=>randomLootTables.displayTable("")),randomLootTables.init(),$("select").on("change",a=>""===$(a.currentTarget).val()&&$(a.currentTarget).removeClass("form-control--error")),window.dispatchEvent(new Event("toolsLoaded"))});

@@ -1,26 +1,2 @@
-"use strict";
-
-class Books {
-	static sortBooks (dataList, a, b) {
-		a = dataList[a.elm.getAttribute(FLTR_ID)];
-		b = dataList[b.elm.getAttribute(FLTR_ID)];
-		return SortUtil.ascSort(a.name, b.name);
-	}
-}
-
-const booksList = new BooksList({
-	contentsUrl: "data/books.json",
-	sortFn: Books.sortBooks,
-	dataProp: "book",
-	rootPage: "book.html",
-	rowBuilderFn: (bk) => {
-		return `<span class="col-xs-12">${bk.name}</span>`;
-	}
-});
-
-window.onload = booksList.onPageLoad.bind(booksList);
-
-function handleBrew (homebrew) {
-	booksList.addData(homebrew);
-	return Promise.resolve();
-}
+"use strict";class Books{static sortBooks(c,d,e,f){return d=c[d.ix],e=c[e.ix],"published"===f.sortBy?SortUtil.ascSortDate(d._pubDate,e._pubDate)||SortUtil.ascSort(d.name,e.name):SortUtil.ascSort(d.name,e.name)}}const booksList=new BooksList({contentsUrl:"data/books.json",fnSort:Books.sortBooks,sortByInitial:"published",sortDirInitial:"desc",dataProp:"book",rootPage:"book.html",enhanceRowDataFn:a=>{a._pubDate=new Date(a.published||"1970-01-01")},rowBuilderFn:a=>`<span class="col-10 bold">${a.name}</span>
+		<span class="col-2">${BooksList.getDateStr(a)}</span>`});window.onload=booksList.pOnPageLoad.bind(booksList);function handleBrew(a){return booksList.addData(a),Promise.resolve()}

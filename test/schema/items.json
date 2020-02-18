@@ -1,9 +1,9 @@
 {
-	"$schema": "http://json-schema.org/draft-06/schema#",
-	"version": "1.1.6",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"version": "1.5.5",
 	"type": "object",
 	"definitions": {
-		"item": {
+		"itemData": {
 			"type": "object",
 			"properties": {
 				"name": {
@@ -35,23 +35,7 @@
 					"type": "integer"
 				},
 				"additionalSources": {
-					"type": "array",
-					"items": {
-						"type": "object",
-						"properties": {
-							"source": {
-								"type": "string"
-							},
-							"page": {
-								"type": "integer"
-							}
-						},
-						"required": [
-							"source",
-							"page"
-						],
-						"additionalProperties": false
-					}
+					"$ref": "util.json#/definitions/additionalSources"
 				},
 				"baseItem": {
 					"type": "string"
@@ -59,20 +43,21 @@
 				"ac": {
 					"type": "integer"
 				},
+				"acSpecial": {
+					"description": "Free text field for homebrew use.",
+					"type": "string"
+				},
 				"age": {
 					"type": "string"
 				},
 				"ammunition": {
 					"type": "boolean"
 				},
-				"armor": {
-					"type": "boolean"
-				},
 				"axe": {
 					"type": "boolean"
 				},
-				"carryingcapacity": {
-					"type": "string"
+				"carryingCapacity": {
+					"type": "integer"
 				},
 				"dmg1": {
 					"type": "string"
@@ -86,36 +71,13 @@
 				"entries": {
 					"type": "array",
 					"items": {
-						"$ref": "/Entry"
+						"$ref": "entry.json"
 					}
 				},
 				"additionalEntries": {
 					"type": "array",
 					"items": {
-						"$ref": "/Entry"
-					}
-				},
-				"modifier": {
-					"type": "array",
-					"items": {
-						"type": "object",
-						"properties": {
-							"_category": {
-								"type": "string"
-							},
-							"__text": {
-								"type": "string"
-							},
-							"toString": {
-								"type": "array"
-							}
-						},
-						"required": [
-							"_category",
-							"__text",
-							"toString"
-						],
-						"additionalProperties": false
+						"$ref": "entry.json"
 					}
 				},
 				"property": {
@@ -151,25 +113,36 @@
 					"type": "string"
 				},
 				"speed": {
-					"type": "string"
+					"type": "integer"
 				},
 				"stealth": {
 					"type": "boolean"
 				},
 				"strength": {
-					"type": "string"
+					"type": ["string", "null"]
 				},
 				"sword": {
 					"type": "boolean"
 				},
-				"technology": {
-					"type": "string"
+				"firearm": {
+					"type": "boolean"
+				},
+				"staff": {
+					"type": "boolean"
 				},
 				"tier": {
 					"type": "string"
 				},
 				"value": {
+					"description": "In copper pieces.",
+					"type": "number"
+				},
+				"currencyConversion": {
+					"description": "ID of a value conversion table. Homebrew only.",
 					"type": "string"
+				},
+				"valueMult": {
+					"type": "number"
 				},
 				"weapon": {
 					"type": "boolean"
@@ -178,7 +151,10 @@
 					"type": "string"
 				},
 				"weight": {
-					"type": "string"
+					"type": "number"
+				},
+				"weightMult": {
+					"type": "number"
 				},
 				"weightNote": {
 					"type": "string"
@@ -195,6 +171,15 @@
 				"crew": {
 					"type": "integer"
 				},
+				"capPassenger": {
+					"type": "integer"
+				},
+				"capCargo": {
+					"type": "number"
+				},
+				"vehSpeed": {
+					"type": "number"
+				},
 				"vehAc": {
 					"type": "integer"
 				},
@@ -207,25 +192,138 @@
 				"charges": {
 					"type": ["string", "integer"]
 				},
+				"recharge": {
+					"enum": ["round", "restShort", "restLong", "dawn", "dusk", "midnight"]
+				},
 				"attachedSpells": {
 					"type": "array",
 					"items": {
 						"type": "string"
 					}
+				},
+				"items": {
+					"description": "This is required for itemGroup entries.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"ability": {
+					"description": "Item ability score adjustments.",
+					"type": "object",
+					"properties": {
+						"choose": {
+							"type": "array"
+						},
+						"static": {
+							"type": "object"
+						},
+						"str":  {
+							"type": "integer"
+						},
+						"dex": {
+							"type": "integer"
+						},
+						"con":  {
+							"type": "integer"
+						},
+						"int": {
+							"type": "integer"
+						},
+						"wis":  {
+							"type": "integer"
+						},
+						"cha": {
+							"type": "integer"
+						}
+					}
+				},
+				"focus": {
+					"description": "Item can be used as a spellcasting focus",
+					"oneOf": [
+						{
+							"type": "boolean"
+						},
+						{
+							"type": "array",
+							"items": {
+								"type": "string",
+								"enum": ["Bard", "Cleric", "Druid", "Paladin", "Sorcerer", "Warlock", "Wizard"]
+							}
+						}
+					]
+				},
+				"lootTables": {
+					"type": "array",
+					"items": {
+						"oneOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "object",
+								"name": {
+									"type": "string"
+								},
+								"source": {
+									"type": "string"
+								}
+							}
+						]
+					}
+				},
+				"alCertificateId": {
+					"description": "Adventurers League item certificate ID; for use in homebrew.",
+					"type": "string"
+				},
+				"bonus": {
+					"description": "Used externally, in VTT modules.",
+					"type": "string"
+				},
+				"otherSources": {
+					"$ref": "util.json#/definitions/otherSources"
+				},
+				"srd": {
+					"$ref": "util.json#/definitions/srd"
 				}
 			},
-			"required": [
-				"name",
-				"rarity",
-				"source"
-			],
 			"additionalProperties": false
+		},
+
+		"item": {
+			"anyOf": [
+				{
+					"type": "object",
+					"$$merge": [
+						{
+							"$ref": "#/definitions/itemData"
+						},
+						{
+							"required": [
+								"name",
+								"rarity",
+								"source"
+							]
+						}
+					]
+				},
+				{
+					"type": "object",
+					"$$merge": [
+						{
+							"$ref": "#/definitions/itemData"
+						},
+						{
+							"$ref": "util.json#/definitions/copyBlock"
+						}
+					]
+				}
+			]
 		}
 	},
 	"properties": {
 		"item": {
 			"type": "array",
-			"uniqueItems": true,
 			"items": {
 				"$ref": "#/definitions/item"
 			}
@@ -233,10 +331,12 @@
 		"itemGroup": {
 			"description": "Used to create fake item entries for groups of related items, often referred to as a single item (e.g. arcane foci)",
 			"type": "array",
-			"uniqueItems": true,
 			"items": {
 				"$ref": "#/definitions/item"
 			}
+		},
+		"_meta": {
+			"$ref": "util.json#/definitions/metaBlock"
 		}
 	},
 	"additionalProperties": false

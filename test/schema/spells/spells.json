@@ -1,11 +1,12 @@
 {
-	"$schema": "http://json-schema.org/draft-06/schema#",
-	"version": "1.2.4",
-	"title": "SpellsArray",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "spells.json",
+	"version": "1.5.2",
+	"title": "Spells",
 	"type": "object",
 
 	"definitions": {
-		"spell": {
+		"spellData": {
 			"properties": {
 				"name": {
 					"type": "string"
@@ -23,8 +24,16 @@
 						"D",
 						"N",
 						"T",
-						"C"
+						"C",
+						"P"
 					]
+				},
+				"subschools": {
+					"description": "For homebrew use only.",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
 				},
 				"meta": {
 					"type": "object",
@@ -57,7 +66,8 @@
 								"cone",
 								"radius",
 								"sphere",
-								"hemisphere"
+								"hemisphere",
+								"cylinder"
 							]
 						},
 						"distance": {
@@ -70,13 +80,29 @@
 										"miles",
 										"self",
 										"touch",
-										"special",
 										"unlimited",
 										"plane",
 										"sight"
 									]
 								},
 								"amount": {
+									"type": "integer"
+								},
+								"typeSecondary": {
+									"description": "Homebrew only",
+									"type": "string",
+									"enum": [
+										"feet",
+										"miles",
+										"self",
+										"touch",
+										"unlimited",
+										"plane",
+										"sight"
+									]
+								},
+								"amountSecondary": {
+									"description": "Homebrew only",
 									"type": "integer"
 								}
 							},
@@ -109,7 +135,8 @@
 											"type": "string"
 										},
 										"cost": {
-											"type": "integer"
+											"description": "In copper pieces.",
+											"type": "number"
 										},
 										"consume": {
 											"type": "boolean"
@@ -125,6 +152,10 @@
 									"type": ["boolean", "string"]
 								}
 							]
+						},
+						"r": {
+							"description": "\"Royalty\" components, as introduced in Acquisitions Incorporated",
+							"type": "boolean"
 						}
 					},
 					"additionalProperties": false
@@ -136,19 +167,25 @@
 				"entries": {
 					"type": "array",
 					"items": {
-						"$ref": "/Entry"
+						"$ref": "entry.json"
 					}
 				},
 				"entriesHigherLevel": {
 					"type": "array",
 					"items": {
-						"$ref": "/Entry"
+						"$ref": "entry.json"
 					}
 				},
 				"classes": {
 					"type": "object",
 					"properties": {
 						"fromClassList": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/class"
+							}
+						},
+						"fromClassListVariant": {
 							"type": "array",
 							"items": {
 								"$ref": "#/definitions/class"
@@ -216,6 +253,21 @@
 						"required": ["name", "source"]
 					}
 				},
+				"backgrounds": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"source": {
+								"type": "string"
+							}
+						},
+						"required": ["name", "source"]
+					}
+				},
 				"source": {
 					"type": "string"
 				},
@@ -223,23 +275,7 @@
 					"type": "integer"
 				},
 				"otherSources": {
-					"type": "array",
-					"items": {
-						"type": "object",
-						"properties": {
-							"source": {
-								"type": "string"
-							},
-							"page": {
-								"type": "integer"
-							}
-						},
-						"required": [
-							"source",
-							"page"
-						],
-						"additionalProperties": false
-					}
+					"$ref": "util.json#/definitions/otherSources"
 				},
 				"damageInflict": {
 					"type": "array",
@@ -304,10 +340,6 @@
 						]
 					}
 				},
-				"permanentEffects": {
-					"description": "Used to flag spells that can/will have permanent effects, but are not listed as having permanent duration",
-					"type": "boolean"
-				},
 				"spellAttack": {
 					"type": "array",
 					"items": {
@@ -317,26 +349,75 @@
 						]
 					}
 				},
-				"scalingEffects": {
-					"type": "boolean"
+				"areaTags": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"enum": ["ST", "MT", "R", "N", "C","Y", "H", "L", "S", "Q", "W"]
+					}
 				},
-				"isHeal": {
-					"type": "boolean"
+				"miscTags": {
+					"type": "array",
+					"description": "PRM = permanentEffects = 'Used to flag spells that can/will have permanent effects, but are not listed as having permanent duration'; SCL = scalingEffects; HL = isHeal; SMN = isSummon; SGT = requiresSight",
+					"items": {
+						"type": "string",
+						"enum": ["PRM", "SCL", "HL", "SMN", "SGT"]
+					}
+				},
+				"srd": {
+					"$ref": "util.json#/definitions/srd"
+				},
+				"scalingLevelDice": {
+					"oneOf": [
+						{
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/scalingLevelDiceItem"
+							}
+						},
+						{
+							"$ref": "#/definitions/scalingLevelDiceItem"
+						}
+					]
 				}
 			},
-			"required": [
-				"name",
-				"level",
-				"school",
-				"time",
-				"range",
-				"components",
-				"duration",
-				"classes",
-				"entries",
-				"source"
-			],
 			"additionalProperties": false
+		},
+
+		"spell": {
+			"anyOf": [
+				{
+					"type": "object",
+					"$$merge": [
+						{
+							"$ref": "#/definitions/spellData"
+						},
+						{
+							"required": [
+								"name",
+								"level",
+								"school",
+								"time",
+								"range",
+								"duration",
+								"entries",
+								"source"
+							]
+						}
+					]
+				},
+				{
+					"type": "object",
+					"$$merge": [
+						{
+							"$ref": "#/definitions/spellData"
+						},
+						{
+							"$ref": "util.json#/definitions/copyBlock"
+						}
+					]
+				}
+			]
 		},
 
 		"time": {
@@ -429,6 +510,25 @@
 				"source"
 			],
 			"additionalProperties": false
+		},
+
+		"scalingLevelDiceItem": {
+			"type": "object",
+			"properties": {
+				"label": {
+					"type": "string"
+				},
+				"scaling": {
+					"type": "object",
+					"patternProperties": {
+						"\\d+": {
+							"type": "string"
+						}
+					},
+					"additionalProperties": false
+				}
+			},
+			"additionalProperties": false
 		}
 	},
 
@@ -436,6 +536,13 @@
 		"spell": {
 			"type": "array",
 			"items": {"$ref": "#/definitions/spell"}
+		},
+		"_meta": {
+			"$ref": "util.json#/definitions/metaBlock"
 		}
-	}
+	},
+	"required": [
+		"spell"
+	],
+	"additionalProperties": false
 }

@@ -1,80 +1,99 @@
-const ut = require('../js/utils.js');
-const er = require('../js/entryrender.js');
-const od = require('../js/omnidexer.js');
+const ut = require("../js/utils.js");
+const er = require("../js/render.js");
+const od = require("../js/omnidexer.js");
 
-UtilSearchIndex = {};
+UtilSearchIndex = {
+	CORE_SOURCES: new Set([SRC_PHB, SRC_MM, SRC_DMG, SRC_VGM, SRC_MTF, SRC_XGE, SRC_SCAG]),
 
-UtilSearchIndex._test_getBasicVariantItems = function () {
-	if (!this.basicVariantItems) {
-		const basics = require(`../data/basicitems.json`);
-		const rawVariants = require(`../data/magicvariants.json`);
-		const variants = rawVariants.variant.map(v => {
-			return {
-				source: v.inherits.source,
-				nameSuffix: v.inherits.nameSuffix,
-				namePrefix: v.inherits.namePrefix,
-				requires: v.requires,
-				excludes: v.excludes
-			}
-		});
-
-		const out = [];
-		basics.basicitem.forEach(b => {
-			variants.forEach(v => {
-				let hasRequired = b.name.indexOf(" (") === -1;
-				hasRequired = hasRequired && v.requires.find(r => Object.keys(r).every(req => b[req] === r[req]));
-				if (v.excludes) {
-					hasRequired = hasRequired && Object.keys(v.excludes).every(ex => b[ex] !== v.excludes[ex]);
-				}
-
-				if (hasRequired) {
-					const copy = JSON.parse(JSON.stringify(b));
-					if (v.namePrefix) copy.name = v.namePrefix + copy.name;
-					if (v.nameSuffix) copy.name += v.nameSuffix;
-					copy.source = v.source;
-					out.push(copy);
-
-					const revName = EntryRenderer.item.modifierPostToPre(copy);
-					if (revName) out.push(revName);
-				}
-			})
-		});
-
-		this.basicVariantItems = out;
+	/**
+	 * Prefer "core" sources, then official sources, then others.
+	 */
+	sortSources: (a, b) => {
+		const aCore = Number(UtilSearchIndex.CORE_SOURCES.has(a));
+		const bCore = Number(UtilSearchIndex.CORE_SOURCES.has(b));
+		if (aCore !== bCore) return bCore - aCore;
+		const aStandard = Number(!SourceUtil.isNonstandardSource(a));
+		const bStandard = Number(!SourceUtil.isNonstandardSource(b));
+		return aStandard !== bStandard ? bStandard - aStandard : SortUtil.ascSortLower(a || "", b || "");
 	}
-	return this.basicVariantItems;
 };
 
-UtilSearchIndex.getIndex = function (doLogging = true, test_doExtraIndex = false) {
+UtilSearchIndex.pGetIndex = async function (doLogging = true, noFilter = false) {
+	return UtilSearchIndex._pGetIndex({}, doLogging, noFilter);
+};
+
+UtilSearchIndex.pGetIndexAlternate = async function (forProp, doLogging = true, noFilter = false) {
+	const opts = {alternate: forProp};
+	return UtilSearchIndex._pGetIndex(opts, doLogging, noFilter);
+};
+
+UtilSearchIndex._pGetIndex = async function (opts, doLogging = true, noFilter = false) {
 	const indexer = new od.Omnidexer();
 
-	od.Omnidexer.TO_INDEX__FROM_INDEX_JSON.forEach(ti => {
-		const index = require(`../data/${ti.dir}/index.json`);
-		Object.values(index).forEach(j => {
-			const absF = `../data/${ti.dir}/${j}`;
-			const contents = require(absF);
-			if (doLogging) console.log(`indexing ${absF}`);
-			indexer.addToIndex(ti, contents, undefined, test_doExtraIndex);
-		})
-	});
+	od.Omnidexer.TO_INDEX__FROM_INDEX_JSON
+		.filter(it => opts.alternate ? it.alternateIndexes && it.alternateIndexes[opts.alternate] : true)
+		.forEach(toIndex => {
+			const index = require(`../data/${toIndex.dir}/index.json`);
+			Object.entries(index)
+				.sort(([kA], [kB]) => UtilSearchIndex.sortSources(kA, kB))
+				.forEach(([_, filename]) => {
+					const absF = `../data/${toIndex.dir}/${filename}`;
+					const contents = require(absF);
+					if (doLogging) console.log(`indexing ${absF}`);
+					const addOptions = {isNoFilter: noFilter};
+					if (opts.alternate) addOptions.alt = toIndex.alternateIndexes[opts.alternate];
+					indexer.addToIndex(toIndex, contents, addOptions);
+				})
+		});
 
-	od.Omnidexer.TO_INDEX.forEach(ti => {
+	await Promise.all(
+		od.Omnidexer.TO_INDEX
+			.filter(toIndex => opts.alternate ? toIndex.alternateIndexes && toIndex.alternateIndexes[opts.alternate] : true)
+			.map(async toIndex => {
+				const filename = `../data/${toIndex.file}`;
+				const data = require(filename);
+
+				async function pAddData (data) {
+					if (doLogging) console.log(`indexing ${filename}`);
+					Object.values(data)
+						.filter(it => it instanceof Array)
+						.forEach(it => it.sort((a, b) => UtilSearchIndex.sortSources(a.source || MiscUtil.get(a, "inherits", "source"), b.source || MiscUtil.get(b, "inherits", "source")) || SortUtil.ascSortLower(a.name || MiscUtil.get(a, "inherits", "name") || "", b.name || MiscUtil.get(b, "inherits", "name") || "")));
+					const addOptions = {isNoFilter: noFilter};
+					if (opts.alternate) addOptions.alt = toIndex.alternateIndexes[opts.alternate];
+					indexer.addToIndex(toIndex, data, addOptions);
+				}
+
+				if (toIndex.postLoad) {
+					toIndex.postLoad(data);
+					await pAddData(data)
+				} else await pAddData(data);
+			})
+	);
+
+	return indexer.getIndex();
+};
+
+// this should be generalised if further specific indexes are required
+UtilSearchIndex.pGetIndexAdditionalItem = async function (baseIndex = 0, doLogging = true) {
+	const indexer = new od.Omnidexer(baseIndex);
+
+	await Promise.all(od.Omnidexer.TO_INDEX.filter(it => it.category === Parser.CAT_ID_ITEM).map(async ti => {
 		const f = `../data/${ti.file}`;
 		const j = require(f);
 
-		function addData (j) {
-			if (doLogging) console.log(`indexing ${f}`);
-			indexer.addToIndex(ti, j, undefined, test_doExtraIndex);
-
-			if (test_doExtraIndex && ti.test_extraIndex) {
-				const extra = ti.test_extraIndex();
-				extra.forEach(add => indexer.index.push(add));
+		async function pAddData (j) {
+			if (ti.additionalIndexes && ti.additionalIndexes.item) {
+				if (doLogging) console.log(`indexing ${f}`);
+				const extra = await ti.additionalIndexes.item(indexer, j);
+				extra.forEach(add => indexer.pushToIndex(add));
 			}
 		}
 
-		if (ti.postLoad) ti.postLoad(j, addData);
-		else addData(j);
-	});
+		if (ti.postLoad) {
+			ti.postLoad(j);
+			await pAddData(j)
+		} else await pAddData(j);
+	}));
 
 	return indexer.getIndex();
 };

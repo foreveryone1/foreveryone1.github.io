@@ -1,9 +1,9 @@
 {
-	"$schema": "http://json-schema.org/draft-06/schema#",
-	"version": "1.0.1",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"version": "1.1.0",
 	"type": "object",
 	"properties": {
-		"race": {
+		"raceFluff": {
 			"type": "array",
 			"items": {
 				"type": "object",
@@ -14,11 +14,23 @@
 					"source": {
 						"type": "string"
 					},
+					"images": {
+						"type": "array",
+						"items": {
+							"$ref": "entry.json#/definitions/entryImage"
+						}
+					},
+					"_excludeBaseImages": {
+						"type": "boolean"
+					},
+					"_excludeBaseEntries": {
+						"type": "boolean"
+					},
 					"entries": {
 						"entries": {
 							"type": "array",
 							"items": {
-								"$ref": "/Entry"
+								"$ref": "entry.json"
 							}
 						}
 					},
@@ -38,6 +50,9 @@
 					},
 					"monstrous": {
 						"type": "boolean"
+					},
+					"type": {
+						"type": "string"
 					}
 				},
 				"required": ["name", "source"],
@@ -48,10 +63,10 @@
 			"type": "object",
 			"properties": {
 				"uncommon": {
-					"$ref": "/Entry"
+					"$ref": "entry.json"
 				},
 				"monstrous": {
-					"$ref": "/Entry"
+					"$ref": "entry.json"
 				}
 			}
 		}

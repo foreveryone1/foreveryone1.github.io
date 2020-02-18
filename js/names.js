@@ -1,145 +1,16 @@
-"use strict";
-
-const JSON_URL = "data/names.json";
-
-let nameList;
-const renderer = EntryRenderer.getDefaultRenderer();
-
-function makeContentsBlock (i, loc) {
-	let out =
-		"<ul>";
-
-	loc.tables.forEach((t, j) => {
-		const tableName = getTableName(loc, t);
-		out +=
-			`<li>
-				<a id="${i},${j}" href="#${UrlUtil.encodeForHash([loc.race, loc.source, t.option])}" title="${tableName}">${tableName}</a>
-			</li>`;
-	});
-
-	out +=
-		"</ul>";
-	return out;
-}
-
-function getTableName (loc, table) {
-	return `${loc.race} - ${table.option}`;
-}
-
-window.onload = function load () {
-	DataUtil.loadJSON(JSON_URL).then(onJsonLoad);
-};
-
-function onJsonLoad (data) {
-	nameList = data.name;
-
-	const namesList = $("ul.names");
-	let tempString = "";
-	for (let i = 0; i < nameList.length; i++) {
-		const loc = nameList[i];
-
-		tempString +=
-			`<li>
-				<span class="name" onclick="showHideList(this)" title="Source: ${Parser.sourceJsonToFull(loc.source)}">${loc.race}</span>
-				${makeContentsBlock(i, loc)}
-			</li>`;
-	}
-	namesList.append(tempString);
-
-	const list = ListUtil.search({
-		valueNames: ["name"],
-		listClass: "names"
-	});
-
-	History.init(true);
-}
-
-function showHideList (ele) {
-	const $ele = $(ele);
-	$ele.next(`ul`).toggle();
-}
-
-function loadhash (id) {
-	renderer.setFirstSection(true);
-
-	const [iLoad, jLoad] = id.split(",").map(n => Number(n));
-	const race = nameList[iLoad];
-	const table = race.tables[jLoad].table;
-	const tableName = getTableName(race, race.tables[jLoad]);
-	const diceType = race.tables[jLoad].diceType;
-
-	let htmlText = `
+"use strict";const JSON_URL="data/names.json";let nameList;const renderer=Renderer.get();function makeContentsBlock(a,b){let c="<ul>";return b.tables.forEach((d,e)=>{const f=getTableName(b,d);c+=`<li><a id="${a},${e}" class="lst--border" href="#${UrlUtil.encodeForHash([b.name,b.source,d.option])}" title="${f}">${f}</a></li>`}),c+="</ul>",c}function getTableName(a,b){return`${a.name} - ${b.option}`}window.onload=function(){ExcludeUtil.pInitialise(),DataUtil.loadJSON(JSON_URL).then(onJsonLoad)},window.onhashchange=()=>{const[a]=Hist.getHashParts(),b=$(`a[href="#${a}"]`);if(!b.length||!a)return void(window.location.hash=$(`.list.names`).find("a").attr("href"));const c=b.attr("id");document.title=`${b.title()} - 5etools`,loadHash(c)};let list;function onJsonLoad(a){nameList=a.name,list=ListUtil.initList({listClass:"names"}),ListUtil.setOptions({primaryLists:[list]});for(let b=0;b<nameList.length;b++){const a=nameList[b],c=document.createElement("li");c.innerHTML=`<span class="name" onclick="showHideList(this)" title="Source: ${Parser.sourceJsonToFull(a.source)}">${a.name}</span>${makeContentsBlock(b,a)}`;const d=new ListItem(b,c,a.name);list.addItem(d)}list.init(),window.onhashchange(),window.dispatchEvent(new Event("toolsLoaded"))}function showHideList(a){const b=$(a);b.next(`ul`).toggle()}function loadHash(a){renderer.setFirstSection(!0);const[b,c]=a.split(",").map(a=>+a),d=nameList[b],e=d.tables[c].table,f=getTableName(d,d.tables[c]),g=d.tables[c].diceType;let h=`
 		<tr>
 			<td colspan="6">
 				<table class="striped-odd">
-					<caption>${tableName}</caption>
+					<caption>${f}</caption>
 					<thead>
 						<tr>
-							<th class="col-xs-2 text-align-center">
-								<span class="roller" onclick="rollAgainstTable('${iLoad}', '${jLoad}')">d${diceType}</span>
+							<th class="col-2 text-center">
+								<span class="roller" onclick="rollAgainstTable('${b}', '${c}')">d${g}</span>
 							</th>
-							<th class="col-xs-10">Name</th>
+							<th class="col-10">Name</th>
 						</tr>
-					</thead>`;
-
-	for (let i = 0; i < table.length; i++) {
-		const range = table[i].min === table[i].max ? pad(table[i].min) : `${pad(table[i].min)}-${pad(table[i].max)}`;
-		htmlText += `<tr><td class="text-align-center">${range}</td><td>${getRenderedText(table[i].enc)}</td></tr>`;
-	}
-
-	htmlText += `
+					</thead>`;for(let b=0;b<e.length;b++){const a=e[b].min===e[b].max?pad(e[b].min):`${pad(e[b].min)}-${pad(e[b].max)}`;h+=`<tr><td class="text-center p-0">${a}</td><td class="p-0">${getRenderedText(e[b].result)}</td></tr>`}h+=`
 				</table>
 			</td>
-		</tr>`;
-	$("#pagecontent").html(htmlText);
-}
-
-function pad (number) {
-	return String(number).padStart(2, "0");
-}
-
-function getRenderedText (rawText) {
-	if (rawText.indexOf("{@") !== -1) {
-		const stack = [];
-		renderer.recursiveEntryRender(rawText, stack);
-		return stack.join("");
-	} else return rawText;
-}
-
-function rollAgainstTable (iLoad, jLoad) {
-	iLoad = Number(iLoad);
-	jLoad = Number(jLoad);
-	const race = nameList[iLoad];
-	const table = race.tables[jLoad];
-	const rollTable = table.table;
-
-	rollTable._rMax = rollTable.rMax == null ? Math.max(...rollTable.filter(it => it.min != null).map(it => it.min), ...rollTable.filter(it => it.max != null).map(it => it.max)) : rollTable.rMax;
-	rollTable._rMin = rollTable._rMin == null ? Math.min(...rollTable.filter(it => it.min != null).map(it => it.min), ...rollTable.filter(it => it.max != null).map(it => it.max)) : rollTable._rMin;
-
-	const roll = RollerUtil.randomise(rollTable._rMax, rollTable._rMin);
-
-	let result;
-	for (let i = 0; i < rollTable.length; i++) {
-		const row = rollTable[i];
-		const trueMin = row.max != null && row.max < row.min ? row.max : row.min;
-		const trueMax = row.max != null && row.max > row.min ? row.max : row.min;
-		if (roll >= trueMin && roll <= trueMax) {
-			result = getRenderedText(row.enc);
-			break;
-		}
-	}
-
-	// add dice results
-	result = result.replace(RollerUtil.DICE_REGEX, function (match) {
-		const r = EntryRenderer.dice.parseRandomise2(match);
-		return `<span class="roller" onclick="reroll(this)">${match}</span> (<span class="result">${r}</span>)`
-	});
-
-	EntryRenderer.dice.addRoll({name: `${race.race} - ${table.option}`}, `<span><strong>${pad(roll)}</strong> ${result}</span>`);
-}
-
-function reroll (ele) {
-	const $ele = $(ele);
-	const resultRoll = EntryRenderer.dice.parseRandomise2($ele.html());
-	$ele.next(".result").html(resultRoll)
-}
+		</tr>`,$("#pagecontent").html(h),$(".list.names").find(`.list-multi-selected`).removeClass("list-multi-selected"),$(`a[id="${a}"]`).parent().addClass("list-multi-selected")}function pad(a){return(a+"").padStart(2,"0")}function getRenderedText(a){if(-1!==a.indexOf("{@")){const b=[];return renderer.recursiveRender(a,b),b.join("")}return a}function rollAgainstTable(a,b){a=+a,b=+b;const c=nameList[a],d=c.tables[b],e=d.table;e._rMax=null==e._rMax?Math.max(...e.filter(a=>null!=a.min).map(a=>a.min),...e.filter(a=>null!=a.max).map(a=>a.max)):e._rMax,e._rMin=null==e._rMin?Math.min(...e.filter(a=>null!=a.min).map(a=>a.min),...e.filter(a=>null!=a.max).map(a=>a.max)):e._rMin;const f=RollerUtil.randomise(e._rMax,e._rMin);let g;for(let c=0;c<e.length;c++){const a=e[c],b=null!=a.max&&a.max<a.min?a.max:a.min,d=null!=a.max&&a.max>a.min?a.max:a.min;if(f>=b&&f<=d){g=getRenderedText(a.result);break}}g=g.replace(RollerUtil.DICE_REGEX,function(a){const b=Renderer.dice.parseRandomise2(a);return`<span class="roller" onmousedown="event.preventDefault()" onclick="reroll(this)">${a}</span> (<span class="result">${b}</span>)`}),Renderer.dice.addRoll({name:`${c.name} - ${d.option}`},`<span><strong>${pad(f)}</strong> ${g}</span>`)}function reroll(a){const b=$(a),c=Renderer.dice.parseRandomise2(b.html());b.next(".result").html(c)}

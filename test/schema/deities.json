@@ -1,6 +1,6 @@
 {
-	"$schema": "http://json-schema.org/draft-06/schema#",
-	"version": "1.0.1",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"version": "1.0.3",
 	"type": "object",
 	"properties": {
 		"deity": {
@@ -56,7 +56,7 @@
 						"items": {
 							"type": "string",
 							"enum": [
-								"Arcana", "Death", "Knowledge", "Life", "Light", "Nature", "Tempest", "Trickery", "War", "Forge", "Grave"
+								"Arcana", "Death", "Knowledge", "Life", "Light", "Nature", "Tempest", "Trickery", "War", "Forge", "Grave", "Order"
 							]
 						}
 					},
@@ -77,31 +77,14 @@
 					"entries": {
 						"type": "array",
 						"items": {
-							"$ref": "/Entry"
+							"$ref": "entry.json"
 						}
 					},
 					"page": {
 						"type": "integer"
 					},
 					"additionalSources": {
-						"description": "Used to add XGE domains (e.g. Forge) to existing deities",
-						"type": "array",
-						"items": {
-							"type": "object",
-							"properties": {
-								"source": {
-									"type": "string"
-								},
-								"page": {
-									"type": "integer"
-								}
-							},
-							"required": [
-								"source",
-								"page"
-							],
-							"additionalProperties": false
-						}
+						"$ref": "util.json#/definitions/additionalSources"
 					},
 					"altNames": {
 						"type": "array",
@@ -110,13 +93,15 @@
 						}
 					},
 					"symbolImg": {
-						"$ref": "/Entry#/definitions/entryImage"
+						"$ref": "entry.json#/definitions/entryImage"
+					},
+					"srd": {
+						"$ref": "util.json#/definitions/srd"
 					}
 				},
 				"additionalProperties": false,
 				"required": [
 					"name",
-					"alignment",
 					"pantheon",
 					"symbol",
 					"source"
