@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Realms of the Marhayam Sea</title>
+        <link rel="stylesheet" href="leaflet-0.7.3/leaflet.css"/>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"/>
+        <link rel="stylesheet" href="dist/leaflet.zoomhome.css"/> <! -- edit lines 236-238 if not using a pixel map  --> 
+        <style>
+            html, body, #map {
+                height: 100%;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+        </style>
+        <script src="jquery-1.11.2.min.js"></script>
+        <script src="leaflet-0.7.3/leaflet.js"></script>
+        <script src="dist/leaflet.zoomhome.js"></script> <! -- edit coords of home button here --> 
+    </head>
+    <body>
+        <div id="map"></div>	
+        <script>
+		
+				// table of contents (ctrl+f to skip to section)
+				//
+				// establish interactivity for show on map buttons
+				//
+				// establish interactivity with political info overlay (on legend)
+				//
+				// establish interactivity with cultural info overlay (on legend)
+				//
+				// establish interactive cultural info on map
+				
+				
+				// create swappable image groups
+				var politicalmap = L.layerGroup().setZIndex(2);
+				
+				var culturalmap = L.layerGroup().setZIndex(1);
+				
+				
+				//create map
+                var map = L.map('map', {
+				zoomControl: false,
+				minZoom: 0,
+				maxZoom: 3,
+				center: [-61, 80],
+				zoom: 2,
+				crs: L.CRS.Simple,
+				layers: [politicalmap] //sets politicalmap as the default display
+				});
+				
+				
+				// make political info and cultural info mutually exclusive
+				var baseMaps = {
+				"Political Info": politicalmap,
+				"Cultural Info": culturalmap
+				};
+				
+				//add layer swapping control to map
+				L.control.layers(baseMaps).addTo(map);
+				// define raster map image + margins
+				var w = 6912,
+					h = 5040,
+					w2 = w+450,
+					h2 = h+450,
+					url = 'img/_map_2x_resolution_web.png';
+				// bounds = 
+				// calculate the edges of the image, in coordinate space
+				var southWest = map.unproject([0, 0], map.getMaxZoom()-1);
+				var northEast = map.unproject([w, h], map.getMaxZoom()-1);
+				var southWest2 = map.unproject([-450, -450], map.getMaxZoom()-1); // turn pixels into coords
+				var northEast2 = map.unproject([w2, h2], map.getMaxZoom()-1); // turn pixels into coords
+				var bounds2 = new L.LatLngBounds(southWest2, northEast2, {animate:true}); // bounds of the map with a bit of room in the margins for comfort
+				var bounds = new L.LatLngBounds(southWest, northEast); //bounds of the rasterised map image
+				
+				// add the image overlay, 
+				// so that it covers the entire map
+				L.imageOverlay(url, bounds).addTo(map);
+
+				// tell leaflet that a user cannot pan outside the map + margins
+				map.setMaxBounds(bounds2);
+				
+				// uncomment this script and open console. clicking on points of the map produces coords
+				map.on('click', function(e){
+				  var coord = e.latlng;
+				  var lat = coord.lat;
+				  var lng = coord.lng;
+				  console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+				  });
+				
+				
+				// establish interactivity with show on map buttons
+				// small sized image overlays are often distorted, so transparent images are used instead
+				// (text is baked into image)
+				//Addrimarca Go To
+				var addrimarcagoto = L.imageOverlay( //draw rectangle from corner to corner with bounds, fill drawn rectangle with (transparent) image
+				  'img/transparent.png',
+				  [[-30, 18.5], [-27, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map); //added directly to map, because always on
+				// after image is clicked, pan user to location
+				addrimarcagoto.on('click', function(e) {
+				map.setView([-250,1400], 2, {animate:true});      
+				}); 
+				//belid Go To
+				var belidgoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-42, 18.5], [-39, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				belidgoto.on('click', function(e) {
+				map.setView([-830,450], 2, {animate:true});      
+				});				
+				//ciarqua Go To
+				var ciarquagoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-54, 18.5], [-51, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				ciarquagoto.on('click', function(e) {
+				map.setView([-210,518], 2, {animate:true});      
+				}); 				
+				//qasimid Go To
+				var qasimidgoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-66, 18.5], [-63, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				qasimidgoto.on('click', function(e) {
+				map.setView([-925,975], 2, {animate:true});      
+				}); 				
+				//iatagna Go To
+				var iatagnagoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-78, 18.5], [-75, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				iatagnagoto.on('click', function(e) {
+				map.setView([-212.5,912.5], 2, {animate:true});      
+				}); 				
+				//lasseti Go To
+				var lassetigoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-90, 18.5], [-87, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				lassetigoto.on('click', function(e) {
+				map.setView([-690,912.5], 2, {animate:true});      
+				}); 				
+				//nishayat Go To
+				var nishayatgoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-102, 18.5], [-99, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				nishayatgoto.on('click', function(e) {
+				map.setView([-750,1280], 2, {animate:true});      
+				}); 
+				//qasbi Go To
+				var qasbigoto = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-114, 18.5], [-111, 42]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).addTo(map);
+				qasbigoto.on('click', function(e) {
+				map.setView([-480,640], 2, {animate:true});      
+				});
+				
+				var legendinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-18, 6.2], [-13, 31.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("Only larger towns and cities of prominent factions are depicted. Smaller settlements, and towns without loyalty to a particular realm have been omitted.").addTo(map);
+
+				//establish interactivity with political info overlay (on legend)
+				//Addrimarca political info
+				
+				var addrimarcapoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-29.5, 43.5], [-27, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("The Addrimarca was the first of the Iatagnan Empire's successor states to reorganise, driven forward by the region's natural wealth. <br> The Hadr river flows into a vast basin, and the annual rains transform the area into a vibrant floodplain. In the drier summers salt deposits are harvested and the ages-old trade route is traversed.").addTo(politicalmap);	//note, not added to the map, but to the group			
+				//belid political info
+				var belidpoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-41.5, 43.5], [-39, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("Even after wresting sovereignty from the Lasseti in the aftermath of the Walk of the Garamonti, the Bélids uphold the ceremonial title of Viceroy, along with the administrative traditions once imposed upon them. Despite furtive overtures of reintegration by the Lasseti, the Bélids maintain their independence, in no small part due to the nomadic tribes' knowledge of the region.").addTo(politicalmap);				
+				//ciarqua political info
+				var ciarquapoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-53.5, 43.5], [-51, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("The most militarised of the Iatagnan Empire's successor states, Ciarqua is the only state to mandate basic military training for all able-bodied persons. This abundance of manpower allows the Commonwealth to undertake risky expeditions into desolate territories.<br>In service of its military, vast swathes of Ciarquan heartland are used for pasture. Shepherds shuttle vast flocks from one encampment to another, ensuring Ciarqua can march onwards.").addTo(politicalmap);				
+				//qasimid political info
+				var qasimidpoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-65.5, 43.5], [-63, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("The Ihnaan, elected for life by the various heads of the tribal confederation, presides over the Hanaanate's dealings with foreign powers, and has limited influence on domestic affairs, with one major exception. <br>While most occupations can be held by people of any temperament, certain professions are restricted. The Ihnaan is entrusted with the task of maintaining the caste system, and organising the biennial selection process, where those who are deemed worthy earn apprenticeships.").addTo(politicalmap);				
+				//iatagna political info
+				var iatagnapoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-77.5, 43.5], [-75, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("The Grand Duchy inherited the heartland of the empire that preceded it, although it has set a divergent course from its predecessor, looking towards naval hegemony. <br>However, some factions push for a renewal of the conquests of yore; the presence of the Lasseti and their control of the Southern straits curtails their trade prospects, and a peninsular road is a poor substitute for a proper sea lane.").addTo(politicalmap);				
+				//lasseti political info
+				var lassetipoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-89.5, 43.5], [-87, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("Historically, the Southern Straits have always been a focal point of conflict, lying at the frontier of two rivalling empires, seldom being ruled by the same empire for greater than a decade at a time. In the wake of both empires' collapse, the Lasseti managed to establish self-rule. <br>Their control of maritime trade and the Straits Toll levied has lead to them flourishing. While the Walk of the Garamonti and its aftermath have weakened the Lasseti's position, they are still positioned to control the Southern Marhayam Sea, barring potential hostile intervention.").addTo(politicalmap);				
+				//nishayat political info
+				var nishayatpoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-101.5, 43.5], [-99, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("Called the growers for their usage of canals to guide alpine melt to rich farmland, the Nishayat claims with pride that its lords have ruled the montane area around Aleph in an unbroken chain dating back to its foundation. <br>The Nishayat may have lost its imperial possessions, but the lord of the Nishayat is confident in his ability to preserve his hold over the remaining territories, in no small part due to the fortifications, natural and constructed, every remaining city boasts. ").addTo(politicalmap);
+				//qasbi political info
+				var qasbipoliticalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-113.5, 43.5], [-111, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true
+				  }
+				).bindPopup("In the turmoil surrounding the collapse of both historical empires, the nondescript twin cities of Muzzada and Hawila swelled in numbers by welcoming displaced people indiscriminately. <br>Through a complex web of mutual guarantees and treaties, the two sizable cities have managed to retain  their independence, despite the interest of neighbouring states. Muzzadan mercenaries and the Hawilan navy-for-hire are often employed in discreet engagements, in service of whoever their current contractor may be.").addTo(politicalmap);
+				
+				
+				
+				//establish interactivity with cultural info overlay (on legend)
+				
+				
+				//Addrimarca cultural info
+				var addrimarcaculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-29.5, 43.5], [-27, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religion:</b> Ha-Cavar<br><b>Languages spoken:</b> Asbahi, Riparian dialect <br><br>The Adri can be grouped into the <i>Lower Adri</i>, who inhabit the floodplains of the Hadr river and the <i>Upper Adri</i>, who live upstream. The Lower Adri are seasonally nomadic, whereas the Upper Adri maintain a sedentary lifestyle.<br>Most Adri adhere to <i>Ha-Cavar</i>, although some Lower Adri have adopted <i>Turbulentism</i> from the Iatagnans they trade with.<br>The Higher Adri speak the <i>Riparian dialect of Asbahi</i>, peppered with words unique to the region, whereas the Lower Adri generally speak the more easily understood <i>standard dialect of Asbahi</i>.").addTo(culturalmap);	//note, not added to the map, but to the group			
+				//belid cultural info
+				var belidculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-41.5, 43.5], [-39, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religion:</b> Shearer Imanism<br><b>Languages spoken:</b> Nishayan, Argiali dialect, Lasseté <br><br> The Bélids can be divided into two groups, the <i>Bel Argiali</i>, or the Walking Bélids, and the <i>Bel Nasari</i> or the watchful Bélids. <br>The Bel Nasari are nominally sedentary, although they are happy to relocate when conditions turn unfavourable. The Bel Argiali, on the other hand, are strictly nomadic, tending their flock and travelling from settlement to settlement. It is common Nasari practice to send their children to nearby Argiali encampments, so they may learn rhetoric and experience arduous labour.<br>Both groups speak <i>Nishayan</i>, although the Argiali also speak an archaic dialect which is held in high esteem. In the East, some Nasari speak <i>Lasseté</i>, as a sign of their 'culturedness'.").addTo(culturalmap);				
+				//ciarqua cultural info
+				var ciarquaculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-53.5, 43.5], [-51, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religion:</b> Caciavism<br><b>Language spoken:</b> Asbahi<br><br>Like their neighbouring successor state, the Ciarquans are <i>Asbaha</i>, although a different creed separates them. The Ciarquans are uniformly adherents of <i>Caciavism</i>, and find their neighbours to the east to be frivolous.<br>That same faith is also in part responsible for the martial structure of Ciarquan society. Expeditions to hazardous locations are undertaken in the hopes of uncovering lost knowledge, and the Commonwealth maintains houses of worship that preach bodily cultivation as means of spiritual growth.").addTo(culturalmap);				
+				//qasimid cultural info
+				var qasimidculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-65.5, 43.5], [-63, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religions:</b> Shearer Imanism, Ha-Cavar<br><b>Language spoken:</b> Nishayan <br><br> The Qasimids, a <i>Nishayan</i> speaking people, hold on fiercely to their traditions, in order to preserve their cultural identity in the face of encroaching nearby powers. Outsiders claim that the pseudo-caste system of the Hanaanate is restrictive, but most Qasimids believe the system maintains harmony and actually offers social mobility.<br>Only a few professions are restricted, and the biennial examination system ostensibly offers any who attempt it a fair shot. Guilds of non-protected professions make use of the occasion to also scope out potential apprentices from the entrants. This emphasis on testing well and improving one's lot in life has lead to one of the highest rates of literacy among the realms of the Marhayam Sea.").addTo(culturalmap);				
+				//iatagna cultural info
+				var iatagnaculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-77.5, 43.5], [-75, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religions:</b> Turbulentism, Shearer Imanism<br><b>Language spoken:</b> Asbahi<br><br> Like their neighbours to the West, Iatagnans are <i>Asbaha</i> although a different creed separates them. The Iatagnans are adherents of either <i>Turbulentism</i> or <i>Shearer Imanism</i>, and find Ciarquans to be too austere. The feasts common to Turbulentism lend themselves to the squabbling of the counts of Iatagna. Each strives to demonstrate their wealth and outdo their compatriots by hosting lavish events or bequeathing meals to the common folk.<br> Iatagnans generally eschew the expansionism espoused by their imperial predecessors, although recent disputes over passage through the Southern Straits have lead to some clamouring for escalation with the Lasseti.").addTo(culturalmap);				
+				//lasseti cultural info
+				var lasseticulturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-89.5, 43.5], [-87, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religions:</b> Orthodox Imanism, Turbulentism<br><b>Languages spoken:</b> Lasseté, Garamonté <br><br> There are three significant cultural groups within the Kingdom of the Two Lasseti, the <i>Garamonti</i>, and the <i>Insular and Continental Lasseti</i>. The Garamonti are a people from the West, who, after fleeing their homeland, conquered the Lasseti. After settling, the Garamonti adopted Lasseté customs and swiftly integrated.<br>Foreign scholars deride <i>Lasseté</i> as a bastardised language of an oft-conquered people. Lasseté, however, has a considerable literary tradition, by grace of plutocratic patronage of the arts and Lasseté religious practices.  <i>Garamonté</i> remains in use as the language of military education and command, although it is no longer spoken as a mother tongue.").addTo(culturalmap);				
+				//nishayat cultural info
+				var nishayatculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-101.5, 43.5], [-99, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religion:</b> Orthodox Imanism<br><b>Language spoken:</b> Nishayan <br><br> The Nishayans formerly held a wide-spanning empire, until a series of crises brought about a collapse, reducing the Nishayat to only her core territories. The former Nishayan dominion still speaks <i>Nishayan</i>, although few other ties have survived.<br>The uninterrupted chain of lordly succession remains a point of Nishayan pride, as do the extensive archives they protect. The council of Aleph offers the services of their scribes at a cut-rate, on the condition a copy of the work isn't already held within the archives.<br>The archive's countless winding wings and labyrinthine sorting make it difficult to navigate for even an archivist. Regardless, the council protects its trove of trifles jealously, and seldom allows outsiders to search for hidden gems of knowledge.").addTo(culturalmap);
+				//qasbi cultural info
+				var qasbiculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-113.5, 43.5], [-111, 52.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Most popular religions:</b> Orthodox Imanism, Turbulentism, Shearer Imanism<br><b>Languages spoken: </b>Qasbi Creole, Nishayan, Asbahi, Lasseté<br><br> The cities of Muzzada and Hawila welcomed droves of displaced people of all cultures during the collapse of the empires. Naturally, most of the new citizens hailed from one of the two fallen empires, hence the prominent presence of  <i>Nishayan</i> and <i>Asbahi</i> speakers, and the proliferation of <i>Imani and Turbulenti</i>.<br> The customs of the wealthy and educated have intermingled and diverged enough to become distinct from their mother culture, whereas the poor generally cling to their culture of origin. Most common folk speak a <i>creole</i> language, in contrast to the wealthy, who take pride in having the resources to be educated in multiple languages.").addTo(culturalmap);
+				
+				//religion popups
+				var religiousinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-121, 6.5], [-117, 43]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("The major religions share common doctrine on the genesis of the universe. All religions posit that existence began as a formless mass, vast and nacreous. At the edges of creation, colours bled out, which a being used to shape matter, giving it purpose.<br>After an indeterminate period of time, the presence of this demiurge could no longer be observed. The fate of the demiurge is where beliefs differ: Imani believe the demiurge willingly split into various aspects, Turbulenti believe the demiurge has entered a profound sleep, and Cavari believe the demiurge has perished.<br>Less common, but also present, are belief systems that do not concern themselves with what has befallen the demiurge; some groups in the South venerate their ancestors, and in the North isolated pockets of animists can be found.<br>No matter the creed, prayers of those in tune with divinity are generally heard, and miracles can be wrought.").addTo(culturalmap);
+				
+				
+				var imaniculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-130.5, 26.5], [-133, 18]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("Imani believe that a vast heavenly host was present when the demiurge committed the act of divine division, gifting each angel present with differing words of divinity. Each fragment has been collected into the Book of Utterings, the foundational text of Imanism. The symbol of Ha-Imani, the intersecting squares, is a depiction of the many pages of their holy book.<br>Divination as an act of worship is common to all Imani. Through methods ranging from dice-rolling to innard reading, random fragments are selected and the sentences they form are interpreted.<br><b>Orthodox Imani</b> have a tradition of textual analysis. Canonised scholarly works have been collected into a secondary book, simply called the Texts, which Orthodox Imani rely on to interpret the sentences they divine.<br>In contrast, <b>Shearer Imani</b> eschew all secondary texts. They believe interpretation of divined sentences should be wholly internal, in emulation of the demiurge's act of shaping. The deeply faithful study under masters to learn how to enter extasis, through which they hope to better interpret the sentences revealed to them.<br>Heterodox sects, limited in size, dedicate themselves to the worship of one particular bearer of divinity, rather than venerating the totality of the manifold demiurge.").addTo(culturalmap);
+				
+				var turbulentismculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-142.5, 26.5], [-145, 18]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("The <b>Turbulenti</b> maintain that the demiurge entered a deep sleep upon disappearing, and it is their responsibility to awaken the demiurge. In accordance with their beliefs, they hold raucous celebrations and feasts on regular intervals. The bell, their symbol of worship, is rung before every feast.<br>Feasting is not the only medium through which the Turbulenti strive to awaken the demiurge. Musicianship is encouraged among the Turbulenti, and some of the most famous folk songs of the Marhayam stem from Turbulenti worship songs. Others adhere to the belief that only the din of battle can awaken the demiurge.<br><b>The Ciavi</b>, a branch mostly limited to Ciarqua, believe that the noise that will awaken the demiurge is not an external noise, but the metaphysical sound of a prayer so fervent the demiurge has no choice but awaken. To that end, groups of devotees venture into the abandoned lands, in the hopes of recovering lost wisdom or suffering duress great enough to strengthen the spirit.<br>A heretical group of Turbulenti assert that mankind is better off with a sleeping demiurge, and strive to silence those who would attempt to awaken that which should slumber evermore.").addTo(culturalmap);
+				
+				var cavariculturalinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-154.5, 26.5], [-157, 18]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("The <b>Cavari</b> believe that the demiurge has died or is otherwise permanently removed from existence, and the world will one day follow suit. The burden is on mankind to minimise suffering during the passing of this world. Fittingly, their religious symbol, two concentric rectangles, represents the interment of the demiurge.<br>Communal worship features prominently in Cavari religious practices. Cooperative action to alleviate suffering is also advocated. To that end, Cavari devotees run hospices where all are welcome. Most Cavari cannot afford the luxury of abstaining from violence, but they at least strive to avoid glorifying bloodshed.<br>Divine magic in Cavari doctrine is either a kindness granted by the heavenly host, or deception performed by fiends who strive to bring about the end times.").addTo(culturalmap);
+				
+				//establish interactive cultural info on map
+				
+				//cultural book overlay is one large image with the same dimension and bounds as the 'actual map' (to avoid distortion that comes with smaller image overlays)
+				var culturebook = L.imageOverlay(
+				  'img/_map_book_overlay.png',
+				  bounds,
+				  {
+					opacity: 1,
+					interactive: false
+				  }
+				).addTo(culturalmap);
+				
+				var upperadribookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-289, 1312.5], [-275.25, 1324]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Perseverance, Hospitality<br><b>Values held in low esteem:</b> Aloofness, Arrogance<br><br>The Upper Adri are a sedentary people who live along the banks of the Hadr river, making a living on agriculture. Most Upper Adri houses are constructed with a vacant room, in order to accomodate any Lower Adri who are displaced by the swelling of the Hadr river during the annual rains.<br> The foundational myth of Upper Adri culture speaks proudly of a tribe who sheltered their brethren despite having little to speak of.").addTo(culturalmap);
+				var loweradribookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-238, 1489.0], [-250.25, 1500]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Spontaneity, Preparedness<br><b>Values held in low esteem:</b> Extravagance, Impoliteness<br><br>The Lower Adri are a seasonally nomadic people who live in the floodplains of the Hadr river, living primarily off trade and pastoralism.<br>During the annual rains, the plains of Hadr turn verdant and marshy. The shepherds do not have to wander far in search of fresh pasture, so the Adri remain in their homes, which are built with elevated doorways to avoid the ingress of water. In the arid summer, the Lower Adri collect the pristine salt that crystallises in the floodplains and send caravans to traverse the ages-old salt road to Iatagnan territory.<br> The foundational myth of Lower Adri culture speaks of a tribe who found shelter among their brethren, and, in times of plenty, proudly recriprocate.").addTo(culturalmap);
+				
+				var belargialibookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-799, 359.0], [-785, 374]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Perseverance, Oration<br><b>Values held in low esteem:</b> Hastiness, Heterodoxy<br><br>The Bel Argiali are a nomadic people who subsist off pastoralism. They travel from settlement to settlement with their flocks of goats, deer, sheep.<br> The Bel Argiali are renowned for their oratory skills and the poetry inherent to the archaic language they speak. When a settlement is visited by Argiali, children are ushered to their encampments to learn proper speech.<br>The foundational myth of Argiali culture speaks of a tribe dispersed by a great external threat, and a poet who reunites its scattered members by travelling from town to town reciting a nursery rhyme unique to the tribe.").addTo(culturalmap);
+				
+				var belnasarebookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-807.5, 592.0], [-793.5, 606.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Resourcefulness, Decisiveness<br><b>Values held in low esteem:</b> Egocentrism, Dependence<br><br>The Bel Nasari are a sedentary people. Depending on the region, they live off agriculture, mining, and forestry.<br> The Bel Nasari are a hardy people by necessity, forged by harsh winters and an unforgiving environ.<br>The foundational myth of Nasari culture speaks of a tribe dispersed by a great external threat, and the measures they have taken to ensure that they will never be scattered in such a way again.").addTo(culturalmap);
+				
+				var asbahabookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-220, 701.0], [-208.5, 713.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Pragmatism, Ambition<br><b>Values held in low esteem:</b> Sentimentalism, Hesitance<br><br>The Asbaha are the people of the core territories of the former Iatagnan Empire. The Asbaha are generally sedentary, although the Ciarquans have embraced a form of utilitarian pastoralism in service of their military expeditions.<br>The foundational myth of Asbaha culture speaks of a tribe living in captivity in an oppressive empire. The tribesmen engineer their escape and topple the empire before founding a new one in their captor's rubble.").addTo(culturalmap);
+				
+				var shivqasimbookinfo = L.imageOverlay(//castes: metalworkers[i], scribe[i], fishermen, lawyer[o], shipwrights[o], brewers[c], deerherd, forester[c]
+				  'img/transparent.png',
+				  [[-969.5, 964.0], [-957.5, 985.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Community, Duty<br><b>Values held in low esteem:</b> Egocentrism, Callousness<br><br><b>Restricted Professions by Temperament</b><br><b>Charcoal:</b>Brewers, Foresters<br><b>Ink:</b>Scribes, Metalworkers<br><b>Oil:</b>Shipwrights, Lawyers<br><b>Water:</b>Fishermen, Deerherds<br><br>The Qasimids, known in their native language as the Shiv Qasim, are a primarily sedentary people. Certain professions, typically passed on from mentor to apprentice, are restricted in a pseudo-caste system.<br>The foundational myth of Qasimid culture speaks of a disharmonious tribe, bickering over who gets to do certain tasks, until a wise elder proposes to divide the most sought after jobs equally and by merit.").addTo(culturalmap);
+				
+				var asbahabookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-220, 701.0], [-208.5, 713.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Pragmatism, Ambition<br><b>Values held in low esteem:</b> Sentimentalism, Hesitance<br><br>The Asbaha are the people of the core territories of the former Iatagnan Empire. The Asbaha are generally sedentary, although the Ciarquans have embraced a form of utilitarian pastoralism in service of their military expeditions.<br>The foundational myth of Asbaha culture speaks of a tribe living in captivity in an oppressive empire. The tribesmen engineer their escape and topple the empire before founding a new one in their captor's rubble.").addTo(culturalmap);
+				
+				var garamontebookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-573, 877.0], [-560, 896.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Martial Prowess, Generosity<br><b>Values held in low esteem:</b> Aloofness, Timidity<br><br>The Garamonti are a displaced culture who conquered the Lasseti and swiftly integrated. Garamonté citizens are often found in the Lasseti military, as they have less of an affinity towards the sea than their compatriots.<br>The foundational myth of Garamonté culture is the tale of their long walk and their two-part conquest of the Lasseti.").addTo(culturalmap);
+				
+				var insularlassetebookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-635.5, 897.0], [-621, 912.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Hardiness, Adventurousness<br><b>Values held in low esteem:</b> Unpreparedness, Hesitance<br><br>The Insular Lasseti are seldom found more than a day's travel away from the sea, whether that be as a fisherman, a kelp farmer, a trader, or a member of the Lasseti navy. Insular Lasseté captains are renowned for feats of naval bravery born from a lifetime on deck.<br>The foundational myth of Insular Lasseté culture speaks of a tribe that evades the yoke of two empires by taking to the sea and harrying their navy.").addTo(culturalmap);
+				
+				var continentallassetebookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-684, 893.0], [-670, 915.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Craftsmanship, Thriftiness<br><b>Values held in low esteem:</b> Directness, Naïveté<br><br>While they bear the word 'continental' in their name, Continental Lasseti also have a great affinity for the sea. Unlike their Insular brethren however, they can also be found making a living on land as craftsmen, shipwrights, or farmers.<br>The foundational myth of Continental Lasseté culture speaks of a tribe that subverts foreign rule through malicious compliance and subterfuge.").addTo(culturalmap);
+				
+				var nishayanbookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-726.5, 1210.0], [-714, 1228.0]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Tradition, Safety<br><b>Values held in low esteem:</b> Ignorance, Unpredictability<br><br>The Nishayans are known as the oldest surviving culture of the Marhayam Sea. Nishayans seldom venture into the world beyond the Nishayat, not driven outward by necessity or wanderlust. The Nishayan empire's downfall and the adversity it brought has a prominent place in the archives.<br>The foundational myth of Nishayan culture speaks of a tribe visited by a mighty angel, who imposes upon them the preservation of the world's knowledge.").addTo(culturalmap);
+				
+				var qasbibookinfo = L.imageOverlay(
+				  'img/transparent.png',
+				  [[-491.7, 634.5], [-480, 645.5]],
+				  {
+					opacity: 1,
+					interactive: true,
+					zIndex: 2
+				  }
+				).bindPopup("<b>Values held in high esteem:</b> Freedom, Purpose<br><b>Values held in low esteem:</b> Dogmatism, Unreliability<br><br>The denizens of the Free Cities have slowly diverged from the cultures from which they hail. This change is more apparent in the wealthy, who intermingle more  freely, although this phenomenon is slowly spreading to certain poorer districts.<br>The foundational myth of Qasbi culture speaks of an angel who travels from tribe to tribe, addressing the rebellious and the heterodox, and prophesising that their progeny will one day find a home.").addTo(culturalmap);
+				
+            $(document).ready(function() {
+                var zoomHome = L.Control.zoomHome();
+                zoomHome.addTo(map);
+            });
+        </script>
+    </body>
+</html>
+
