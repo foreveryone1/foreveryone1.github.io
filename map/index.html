@@ -51,7 +51,16 @@
 				layers: [politicalmap] //sets politicalmap as the default display
 				});
 				
-				
+				// bounds = rectangle drawn between 2 coords in this format [[X, Y],[A,B]]
+				// uncomment this script and open console. clicking on points of the map produces coords, used to determine bounds of interactive buttons => click bottom left for one set of coords, and top right for the other
+				map.on('click', function(e){
+				  var coord = e.latlng;
+				  var lat = coord.lat;
+				  var lng = coord.lng;
+				  console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+				  });
+				  
+				 
 				// make political info and cultural info mutually exclusive
 				var baseMaps = {
 				"Political Info": politicalmap,
@@ -65,8 +74,7 @@
 					h = 5040,
 					w2 = w+450,
 					h2 = h+450,
-					url = 'img/1map_2x_resolution_web.png'; //use an image where 4px = 1 mile >>easy to use in maptool 48px = 1 tile >> 1 movement (5 ft) = 12 miles = half a day's movement
-				// bounds = 
+					url = 'img/1map_2x_resolution_web.png'; //use an image where 4px = 1 mile >>easy to use in maptool 48px = 1 tile >> 1 movement (5 ft) = 12 miles = half a day's movement 
 				// calculate the edges of the image, in coordinate space
 				var southWest = map.unproject([0, 0], map.getMaxZoom()-1);
 				var northEast = map.unproject([w, h], map.getMaxZoom()-1);
@@ -82,13 +90,6 @@
 				// tell leaflet that a user cannot pan outside the map + margins
 				map.setMaxBounds(bounds2);
 				
-				// uncomment this script and open console. clicking on points of the map produces coords
-				map.on('click', function(e){
-				  var coord = e.latlng;
-				  var lat = coord.lat;
-				  var lng = coord.lng;
-				  console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
-				  });
 				
 				
 				// establish interactivity with show on map buttons
