@@ -18,6 +18,7 @@
         <script src="jquery-1.11.2.min.js"></script>
         <script src="leaflet-0.7.3/leaflet.js"></script>
         <script src="dist/leaflet.zoomhome.js"></script> <! -- edit coords of home button here -->
+        <script src="dist/leaflet.permalink.js"></script>
 
     </head>
     <body>
@@ -39,17 +40,21 @@
 				
 				var culturalmap = L.layerGroup().setZIndex(1);
 				
+				var mappos = L.Permalink.getMapLocation();
+
 				
 				//create map
                 var map = L.map('map', {
 				zoomControl: false,
 				minZoom: 0,
 				maxZoom: 3,
-				center: [-61, 80],
-				zoom: 2,
+			    center: mappos.center,
+			    zoom: mappos.zoom,
 				crs: L.CRS.Simple,
 				layers: [politicalmap] //sets politicalmap as the default display
 				});
+				
+				L.Permalink.setup(map);
 				
 				// bounds = rectangle drawn between 2 coords in this format [[X, Y],[A,B]]
 				// uncomment this script and open console. clicking on points of the map produces coords, used to determine bounds of interactive buttons => click bottom left for one set of coords, and top right for the other
