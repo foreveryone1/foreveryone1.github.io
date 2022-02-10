@@ -33,7 +33,7 @@
 		"ajv": "^6.12.2",
 		"eslint": "^7.17.0",
 		"http-server": "^0.12.3",
-		"node-sass": "^5.0.0",
+		"node-sass": "^7.0.0",
 		"probe-image-size": "^5.0.0",
 		"readline-sync": "^1.4.10",
 		"simple-git": "2.5.0",
