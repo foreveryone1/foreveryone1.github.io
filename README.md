@@ -1,6 +1,6 @@
 ## 5e.tools
 
-Visit the [main site](5etools.html).
+Visit the [main site](5etools.html)
 
 
 
