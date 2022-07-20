@@ -39,7 +39,7 @@
 		"simple-git": "2.5.0",
 		"stylelint": "^13.6.0",
 		"stylelint-config-sass-guidelines": "^7.0.0",
-		"terser": "^5.5.1",
+		"terser": "^5.14.2",
 		"xmlbuilder": "^15.1.1"
 	},
 	"bugs": {
